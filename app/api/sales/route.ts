@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
 
+async function checkAuth() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
+
 // GET /api/sales — lista vendas com filtros
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  if (!await checkAuth()) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   try {
     const { searchParams } = new URL(req.url);
@@ -59,8 +63,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/sales — finaliza uma venda (transação atômica)
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  if (!await checkAuth()) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   try {
     const body = await req.json();

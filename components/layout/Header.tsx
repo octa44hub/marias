@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { formatDate } from "@/lib/formatters";
+import { createClient } from "@/lib/supabase/client";
 
 interface HeaderProps {
   bazarName?: string;
@@ -18,8 +19,9 @@ const PAGE_TITLES: Record<string, string> = {
   "/relatorios": "Relatório de Vendas",
 };
 
-export function Header({ bazarName = "Bazar PDV" }: HeaderProps) {
+export function Header({ bazarName = "Maria's Confecções" }: HeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [confirmLogout, setConfirmLogout] = useState(false);
 
   const title = PAGE_TITLES[pathname] || bazarName;
@@ -31,16 +33,31 @@ export function Header({ bazarName = "Bazar PDV" }: HeaderProps) {
       setTimeout(() => setConfirmLogout(false), 3000);
       return;
     }
-    await signOut({ callbackUrl: "/login" });
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/login");
   }
 
   return (
     <header className="no-print sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
       <div className="flex items-center justify-between h-14 px-4">
-        {/* Esquerda: título e data */}
-        <div className="flex flex-col">
-          <span className="text-base font-semibold text-gray-900 leading-tight">{title}</span>
-          <span className="text-xs text-gray-400 leading-tight hidden sm:block">{today}</span>
+        {/* Esquerda: logo + título */}
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex-shrink-0">
+            <div className="w-8 h-8 bg-black rounded-lg overflow-hidden flex items-center justify-center">
+              <Image
+                src="/logo.png"
+                alt="Maria's Confecções"
+                width={32}
+                height={32}
+                className="object-contain p-0.5"
+              />
+            </div>
+          </Link>
+          <div className="flex flex-col">
+            <span className="text-base font-semibold text-gray-900 leading-tight">{title}</span>
+            <span className="text-xs text-gray-400 leading-tight hidden sm:block">{today}</span>
+          </div>
         </div>
 
         {/* Direita: links desktop + logout */}

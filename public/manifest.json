@@ -1,7 +1,7 @@
 {
-  "name": "Bazar PDV",
-  "short_name": "Bazar PDV",
-  "description": "Sistema de gestão de vendas para bazar",
+  "name": "Maria's Confecções",
+  "short_name": "Maria's PDV",
+  "description": "Sistema de gestão de vendas — Maria's Confecções",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f9fafb",

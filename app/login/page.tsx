@@ -1,24 +1,25 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { signIn, useSession } from "next-auth/react";
+import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const supabase = createClient();
 
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Se já estiver logado, redireciona
   useEffect(() => {
-    if (status === "authenticated") {
-      router.replace("/dashboard");
-    }
-  }, [status, router]);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) router.replace("/dashboard");
+    });
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -28,14 +29,13 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const result = await signIn("credentials", {
-        username,
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
         password,
-        redirect: false,
       });
 
-      if (result?.error) {
-        setError("Usuário ou senha incorretos.");
+      if (signInError) {
+        setError("E-mail ou senha incorretos.");
       } else {
         router.replace("/dashboard");
       }
@@ -46,25 +46,20 @@ export default function LoginPage() {
     }
   }
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-50 to-indigo-100 px-4">
-      {/* Logo / Branding */}
+      {/* Logo */}
       <div className="mb-8 text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl shadow-lg mb-4">
-          <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
+        <div className="inline-flex items-center justify-center w-32 h-32 bg-black rounded-2xl shadow-lg mb-3 overflow-hidden">
+          <Image
+            src="/logo.png"
+            alt="Maria's Confecções"
+            width={128}
+            height={128}
+            className="object-contain p-2"
+            priority
+          />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Bazar PDV</h1>
         <p className="text-gray-500 text-sm mt-1">Sistema de gestão de vendas</p>
       </div>
 
@@ -74,17 +69,17 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-              Usuário
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              E-mail
             </label>
             <input
-              id="username"
-              type="text"
-              autoComplete="username"
+              id="email"
+              type="email"
+              autoComplete="email"
               autoFocus
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Digite seu usuário"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
               required
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-gray-900
                 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500
@@ -140,7 +135,7 @@ export default function LoginPage() {
         </form>
       </div>
 
-      <p className="mt-6 text-xs text-gray-400">Bazar PDV &copy; {new Date().getFullYear()}</p>
+      <p className="mt-6 text-xs text-gray-400">Maria&apos;s Confecções &copy; {new Date().getFullYear()}</p>
     </div>
   );
 }

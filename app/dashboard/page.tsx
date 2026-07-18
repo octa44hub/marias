@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -46,10 +47,20 @@ export default function DashboardPage() {
   return (
     <AppLayout>
       <div className="space-y-4">
-        {/* Boas-vindas */}
-        <div className="flex items-center justify-between">
+        {/* Boas-vindas com logo */}
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 bg-black rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0 shadow-md">
+            <Image
+              src="/logo.png"
+              alt="Maria's Confecções"
+              width={80}
+              height={80}
+              className="object-contain p-1"
+              priority
+            />
+          </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Olá!</h1>
+            <h1 className="text-xl font-bold text-gray-900">Maria&apos;s Confecções</h1>
             <p className="text-sm text-gray-500">{formatDate(new Date())}</p>
           </div>
         </div>

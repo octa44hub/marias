@@ -12,15 +12,15 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Bazar PDV",
-    template: "%s | Bazar PDV",
+    default: "Maria's Confecções",
+    template: "%s | Maria's Confecções",
   },
-  description: "Sistema de gestão de vendas para bazar",
+  description: "Sistema de gestão de vendas — Maria's Confecções",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Bazar PDV",
+    title: "Maria's PDV",
   },
   formatDetection: {
     telephone: false,
