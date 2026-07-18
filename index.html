@@ -331,6 +331,33 @@
       transition: border-color .15s, color .15s;
     }
     .pdv-avulso-btn:active { border-color: var(--primary); color: var(--primary); }
+
+    /* ── LOGIN ── */
+    .login-wrap {
+      position: fixed; inset: 0; background: #000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 1000; padding: 24px;
+    }
+    .login-logo {
+      width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
+      border: 2px solid var(--primary); box-shadow: 0 0 30px rgba(201,162,39,.3);
+      margin-bottom: 20px;
+    }
+    .login-title { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 4px; }
+    .login-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; }
+    .login-box   { width: 100%; max-width: 360px; }
+    .login-err   { background: rgba(239,83,80,.15); border: 1px solid rgba(239,83,80,.4); color: var(--danger);
+                   border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; margin-bottom: 14px; text-align: center; }
+
+    /* ── CONFIG (Usuários) ── */
+    .user-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .user-row:last-child { border-bottom: none; }
+    .user-info { flex: 1; }
+    .user-nome { font-size: 14px; font-weight: 700; color: var(--text); }
+    .user-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .role-chip { display: inline-block; padding: 1px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+    .role-admin { background: rgba(201,162,39,.2); color: var(--primary); }
+    .role-func  { background: rgba(100,181,246,.15); color: #64b5f6; }
   </style>
 </head>
 <body>
@@ -344,12 +371,18 @@
       <div class="header-title" id="hd-title">Início</div>
     </div>
   </div>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-    <div id="hd-action"></div>
-    <div class="sync-row">
-      <div class="sync-dot" id="sync-dot"></div>
-      <span class="sync-lbl" id="sync-lbl">—</span>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+      <div id="hd-action"></div>
+      <div class="sync-row">
+        <div class="sync-dot" id="sync-dot"></div>
+        <span class="sync-lbl" id="sync-lbl">—</span>
+      </div>
     </div>
+    <button id="hd-gear" onclick="go('config')" style="display:none;
+      background:rgba(201,162,39,.15);border:1.5px solid rgba(201,162,39,.4);
+      border-radius:50%;width:34px;height:34px;font-size:17px;cursor:pointer;
+      align-items:center;justify-content:center;flex-shrink:0;" title="Configurações">⚙️</button>
   </div>
 </header>
 
@@ -378,7 +411,30 @@
     <span class="nav-icon">📊</span>
     <span class="nav-label">Relatórios</span>
   </button>
+  <button class="nav-tab" id="tab-logout-func" onclick="doLogout()" style="display:none;">
+    <span class="nav-icon">🚪</span>
+    <span class="nav-label">Sair</span>
+  </button>
 </nav>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap" style="display:none;">
+  <img src="logo.png" class="login-logo" alt="Maria's">
+  <div class="login-title">Bazar Maria's</div>
+  <div class="login-sub">Confecções</div>
+  <div class="login-box">
+    <div class="login-err" id="login-err" style="display:none;"></div>
+    <div class="field"><label>Usuário</label>
+      <input class="input" id="login-user" autocomplete="username" placeholder="seu usuário"
+        onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    </div>
+    <div class="field"><label>Senha</label>
+      <input class="input" id="login-pass" type="password" autocomplete="current-password" placeholder="••••••"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary btn-block" style="padding:15px;font-size:15px;" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
 
 <!-- MODAL -->
 <div class="modal-overlay" id="modal-ov">
@@ -448,7 +504,8 @@ async function syncOnStart() {
 // ══════════════════════════════════════════
 //  DATA LAYER
 // ══════════════════════════════════════════
-const K = { products:'marias_prods', sales:'marias_sales', customers:'marias_custs' };
+const K = { products:'marias_prods', sales:'marias_sales', customers:'marias_custs', users:'marias_users' };
+const SESSION_KEY = 'marias_session';
 const DB = {
   getRaw(k) { try { return JSON.parse(localStorage.getItem(k)||'[]'); } catch { return []; } },
   get(k)    { return this.getRaw(k); },
@@ -467,6 +524,7 @@ const todayStr = ()  => new Date().toDateString();
 // ══════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════
+let session      = null;   // { id, nome, usuario, role }
 let screen       = 'home';
 let cart         = [];
 let pgto         = null;
@@ -485,27 +543,34 @@ let prodFilter   = 'todos';
 // ══════════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════════
-const TITLES = { home:'Início', pdv:'Ponto de Venda', produtos:'Produtos', fiado:'Fiado', relatorios:'Relatórios' };
+const TITLES = { home:'Início', pdv:'Ponto de Venda', produtos:'Produtos', fiado:'Fiado', relatorios:'Relatórios', config:'Configurações' };
+
+const HDR_BTN = `background:rgba(201,162,39,.2);border:1.5px solid rgba(201,162,39,.5);color:var(--primary);
+  padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;`;
 
 function go(s) {
+  // Bloqueia acesso a telas restritas para funcionário
+  const isAdmin = session && session.role === 'admin';
+  const funcAllowed = ['pdv','produtos'];
+  if (!isAdmin && !funcAllowed.includes(s)) s = 'pdv';
+
   screen = s;
-  document.getElementById('hd-title').textContent = TITLES[s];
+  document.getElementById('hd-title').textContent = TITLES[s] || s;
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-'+s).classList.add('active');
+  const activeTab = document.getElementById('tab-'+s);
+  if (activeTab) activeTab.classList.add('active');
+
   const ha = document.getElementById('hd-action');
   if (s === 'home') {
-    ha.innerHTML = `<span style="font-size:12px;opacity:.8;">${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'})}</span>`;
+    ha.innerHTML = `<span style="font-size:12px;color:var(--text-muted);">${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'})}</span>`;
   } else if (s === 'produtos') {
-    ha.innerHTML = `<button onclick="openProdModal(null)"
-      style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:white;
-             padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
-      + Produto</button>`;
+    ha.innerHTML = `<button onclick="openProdModal(null)" style="${HDR_BTN}">+ Produto</button>`;
   } else if (s === 'fiado') {
-    ha.innerHTML = `<button onclick="openCustModal(null)"
-      style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:white;
-             padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
-      + Cliente</button>`;
+    ha.innerHTML = `<button onclick="openCustModal(null)" style="${HDR_BTN}">+ Cliente</button>`;
+  } else if (s === 'config') {
+    ha.innerHTML = `<button onclick="doLogout()" style="${HDR_BTN}">Sair</button>`;
   } else { ha.innerHTML = ''; }
+
   viewCust = null;
   if (s !== 'pdv') { pdvSearch = ''; showSugg = false; }
   render();
@@ -516,11 +581,12 @@ function go(s) {
 // ══════════════════════════════════════════
 function render() {
   const m = document.getElementById('main');
-  if      (screen==='home')      m.innerHTML = renderHome();
-  else if (screen==='pdv')       m.innerHTML = renderPDV();
-  else if (screen==='produtos')  m.innerHTML = renderProdutos();
-  else if (screen==='fiado')     m.innerHTML = viewCust ? renderCustDetail() : renderFiado();
-  else                           m.innerHTML = renderRelatorios();
+  if      (screen==='home')       m.innerHTML = renderHome();
+  else if (screen==='pdv')        m.innerHTML = renderPDV();
+  else if (screen==='produtos')   m.innerHTML = renderProdutos();
+  else if (screen==='fiado')      m.innerHTML = viewCust ? renderCustDetail() : renderFiado();
+  else if (screen==='config')     m.innerHTML = renderConfig();
+  else                            m.innerHTML = renderRelatorios();
   syncCartBadge();
 }
 
@@ -694,20 +760,12 @@ function renderPDV() {
           <div style="font-size:24px;font-weight:900;color:var(--success);">${fmt(change)}</div>
         </div>` : ''}`;
   } else if (pgto === 'fiado') {
-    const custs = DB.get(K.customers);
-    const opts = custs.map(c =>
-      `<option value="${c.id}"${clienteId===c.id?' selected':''}>${esc(c.nome)}${c.telefone?' ('+esc(c.telefone)+')':''}</option>`
-    ).join('');
-    payExtra = `
-      <div class="field" style="margin-top:12px;">
-        <label>Cliente *</label>
-        <select class="input" onchange="clienteId=this.value">
-          <option value="">Selecionar cliente...</option>
-          ${opts}
-        </select>
-      </div>
-      <button class="btn btn-outline btn-block" style="margin-bottom:4px;font-size:13px;"
-        onclick="openCustModal(null,true)">+ Novo cliente</button>`;
+    if (!clienteId) {
+      payExtra = `
+        <div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(239,83,80,0.1);border:1px solid rgba(239,83,80,0.3);font-size:12px;color:var(--danger);font-weight:600;">
+          ⚠️ Selecione o cliente no bloco acima para registrar no fiado.
+        </div>`;
+    }
   }
 
   const canFin = cart.length > 0 && pgto && (pgto !== 'fiado' || clienteId);
@@ -746,7 +804,28 @@ function renderPDV() {
         <span style="font-size:28px;font-weight:900;">${fmt(total)}</span>
       </div>` : ''}
 
-    <!-- 4. Pagamento -->
+    <!-- 4. Cliente (opcional) -->
+    <div class="card">
+      ${(() => {
+        const custs = DB.get(K.customers);
+        const opts = custs.map(c =>
+          `<option value="${c.id}"${clienteId===c.id?' selected':''}>${esc(c.nome)}${c.telefone?' ('+esc(c.telefone)+')':''}</option>`
+        ).join('');
+        return `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div class="sec-title">👤 Cliente</div>
+            <span style="font-size:10px;color:var(--text-muted);font-weight:600;">opcional</span>
+          </div>
+          <select class="input" onchange="clienteId=this.value;render()">
+            <option value="">Sem identificação</option>
+            ${opts}
+          </select>
+          <button class="btn btn-ghost btn-block" style="margin-top:8px;font-size:12px;padding:6px;"
+            onclick="openCustModal(null,false)">+ Cadastrar novo cliente</button>`;
+      })()}
+    </div>
+
+    <!-- 5. Pagamento -->
     <div class="card">
       <div class="sec-title" style="margin-bottom:10px;">💳 Pagamento</div>
       <div class="pay-grid">${payBtns}</div>
@@ -1268,12 +1347,202 @@ function esc(s='') {
 }
 
 // ══════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════
+function ensureDefaultAdmin() {
+  const users = DB.get(K.users);
+  if (!users.length) {
+    DB.set(K.users, [{
+      id: 'admin', nome: 'Administrador', usuario: 'admin', senha: 'admin123', role: 'admin'
+    }]);
+  }
+}
+
+function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const err  = document.getElementById('login-err');
+  if (!user || !pass) { showLoginErr('Preencha usuário e senha'); return; }
+  const users = DB.get(K.users);
+  const found = users.find(u => u.usuario === user && u.senha === pass);
+  if (!found) { showLoginErr('Usuário ou senha inválidos'); return; }
+  session = { id: found.id, nome: found.nome, usuario: found.usuario, role: found.role };
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch(e){}
+  document.getElementById('login-wrap').style.display = 'none';
+  err.style.display = 'none';
+  applySession();
+  go('home');
+}
+
+function showLoginErr(msg) {
+  const e = document.getElementById('login-err');
+  e.textContent = msg; e.style.display = 'block';
+}
+
+function doLogout() {
+  if (!confirm('Sair da conta?')) return;
+  session = null;
+  try { localStorage.removeItem(SESSION_KEY); } catch(e){}
+  showApp(false);
+}
+
+function applySession() {
+  const isAdmin = session && session.role === 'admin';
+  // Abas exclusivas do admin
+  ['home','fiado','relatorios'].forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if (el) el.style.display = isAdmin ? '' : 'none';
+  });
+  // Botão sair para funcionários na nav
+  const logoutBtn = document.getElementById('tab-logout-func');
+  if (logoutBtn) logoutBtn.style.display = isAdmin ? 'none' : '';
+  // Engrenagem de config no header (admin)
+  const gear = document.getElementById('hd-gear');
+  if (gear) gear.style.display = isAdmin ? 'flex' : 'none';
+}
+
+function showApp(visible) {
+  document.getElementById('login-wrap').style.display = visible ? 'none' : 'flex';
+  document.querySelector('.header').style.display      = visible ? '' : 'none';
+  document.getElementById('main').style.display        = visible ? '' : 'none';
+  document.querySelector('.bottom-nav').style.display  = visible ? '' : 'none';
+}
+
+// ══════════════════════════════════════════
+//  CONFIG (Gerenciar usuários) — só admin
+// ══════════════════════════════════════════
+function renderConfig() {
+  const users = DB.get(K.users);
+  const rows = users.map(u => `
+    <div class="user-row">
+      <div class="user-info">
+        <div class="user-nome">${esc(u.nome)}</div>
+        <div class="user-meta">@${esc(u.usuario)} · <span class="role-chip ${u.role==='admin'?'role-admin':'role-func'}">${u.role==='admin'?'Admin':'Funcionário'}</span></div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="icon-btn" onclick="openUserModal('${u.id}')" title="Editar">✏️</button>
+        ${u.id !== session.id && u.id !== 'admin' ? `<button class="icon-btn" onclick="delUser('${u.id}')" title="Excluir">🗑</button>` : ''}
+      </div>
+    </div>`).join('');
+
+  return `
+    <div class="sec-hd" style="margin-bottom:12px;">
+      <div class="sec-title" style="font-size:16px;">⚙️ Configurações</div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hd" style="margin-bottom:10px;">
+        <div class="sec-title">Usuários</div>
+        <button class="btn btn-outline" style="font-size:12px;padding:5px 10px;" onclick="openUserModal(null)">+ Novo</button>
+      </div>
+      ${rows || '<div class="empty"><div class="e-text">Nenhum usuário</div></div>'}
+    </div>
+
+    <div class="card" style="margin-top:4px;">
+      <div class="sec-title" style="margin-bottom:10px;">Sessão atual</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Logado como <strong style="color:var(--text);">${esc(session.nome)}</strong> (${session.role==='admin'?'Admin':'Funcionário'})</div>
+      <button class="btn btn-danger btn-block" onclick="doLogout()">Sair da conta</button>
+    </div>`;
+}
+
+function openUserModal(uid) {
+  const u = uid ? DB.get(K.users).find(x=>x.id===uid) : null;
+  document.getElementById('modal-ov').classList.add('open');
+  document.getElementById('modal-box').innerHTML = `
+    <div class="modal-hd">
+      <div class="modal-title">${u ? 'Editar usuário' : 'Novo usuário'}</div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="field"><label>Nome completo</label>
+      <input class="input" id="u-nome" placeholder="Ex: Maria" value="${esc(u?.nome||'')}"></div>
+    <div class="field"><label>Usuário (login)</label>
+      <input class="input" id="u-user" placeholder="Ex: maria" value="${esc(u?.usuario||'')}" autocomplete="off"
+        ${u?.id==='admin'?'disabled':''}>
+    </div>
+    <div class="field"><label>${u ? 'Nova senha (deixe em branco para manter)' : 'Senha'}</label>
+      <input class="input" id="u-pass" type="password" placeholder="••••••" autocomplete="new-password"></div>
+    <div class="field"><label>Perfil</label>
+      <select class="input" id="u-role" ${u?.id==='admin'?'disabled':''}>
+        <option value="admin"   ${u?.role==='admin'  ?'selected':''}>Admin — acesso total</option>
+        <option value="func"    ${u?.role==='func'   ?'selected':''}>Funcionário — PDV e Produtos</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-block" style="padding:13px;" onclick="saveUser('${uid||''}')">
+      ${u ? 'Salvar alterações' : 'Criar usuário'}
+    </button>
+    <div style="height:8px;"></div>`;
+}
+
+function saveUser(uid) {
+  const nome = document.getElementById('u-nome').value.trim();
+  const user = (document.getElementById('u-user').disabled
+    ? DB.get(K.users).find(x=>x.id===uid)?.usuario
+    : document.getElementById('u-user').value.trim().toLowerCase());
+  const pass = document.getElementById('u-pass').value;
+  const role = document.getElementById('u-role').disabled
+    ? 'admin'
+    : document.getElementById('u-role').value;
+
+  if (!nome || !user) { showToast('Nome e usuário são obrigatórios'); return; }
+
+  const users = DB.get(K.users);
+
+  if (uid) {
+    const idx = users.findIndex(x=>x.id===uid);
+    if (idx < 0) return;
+    const conflict = users.find(u=>u.usuario===user && u.id!==uid);
+    if (conflict) { showToast('Usuário já existe'); return; }
+    users[idx].nome    = nome;
+    users[idx].usuario = user;
+    users[idx].role    = role;
+    if (pass) users[idx].senha = pass;
+  } else {
+    if (!pass) { showToast('Defina uma senha'); return; }
+    if (users.find(u=>u.usuario===user)) { showToast('Usuário já existe'); return; }
+    users.push({ id: uid_()||uid(), nome, usuario: user, senha: pass, role });
+  }
+
+  DB.set(K.users, users);
+  closeModal(); render();
+  showToast(uid ? 'Usuário atualizado ✓' : 'Usuário criado ✓');
+}
+
+function uid_() { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+function delUser(uid) {
+  if (!confirm('Remover este usuário?')) return;
+  DB.set(K.users, DB.get(K.users).filter(u=>u.id!==uid));
+  render(); showToast('Usuário removido');
+}
+
+// ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
-go('home');
+
+ensureDefaultAdmin();
+
+// Restaurar sessão
+try {
+  const saved = localStorage.getItem(SESSION_KEY);
+  if (saved) {
+    const s = JSON.parse(saved);
+    // Valida que o usuário ainda existe
+    const stillExists = DB.get(K.users).find(u=>u.id===s.id && u.usuario===s.usuario);
+    if (stillExists) session = s;
+  }
+} catch(e) {}
+
+if (session) {
+  showApp(true);
+  applySession();
+  go(session.role === 'admin' ? 'home' : 'pdv');
+} else {
+  showApp(false);
+  document.getElementById('login-wrap').style.display = 'flex';
+}
 syncOnStart();
 </script>
 </body>
