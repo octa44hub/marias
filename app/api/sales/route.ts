@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
 
-async function checkAuth() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
-}
-
 // GET /api/sales — lista vendas com filtros
 export async function GET(req: NextRequest) {
-  if (!await checkAuth()) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-
   try {
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get("startDate");
@@ -48,9 +39,7 @@ export async function GET(req: NextRequest) {
             }
           : {}),
       },
-      include: {
-        items: true,
-      },
+      include: { items: true },
       orderBy: { createdAt: "desc" },
     });
 
@@ -63,13 +52,10 @@ export async function GET(req: NextRequest) {
 
 // POST /api/sales — finaliza uma venda (transação atômica)
 export async function POST(req: NextRequest) {
-  if (!await checkAuth()) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-
   try {
     const body = await req.json();
     const { items, discount, paymentMethod, installments, customerName } = body;
 
-    // Validações básicas
     if (!items || items.length === 0)
       return NextResponse.json({ error: "A venda deve ter pelo menos um produto" }, { status: 400 });
     if (!paymentMethod)
@@ -77,7 +63,6 @@ export async function POST(req: NextRequest) {
     if (paymentMethod === "CREDIT_ACCOUNT" && !customerName?.trim())
       return NextResponse.json({ error: "Nome do cliente é obrigatório para vendas fiado" }, { status: 400 });
 
-    // Calcula totais (em centavos)
     const subtotal = items.reduce(
       (sum: number, item: { quantity: number; unitPrice: number }) => sum + item.quantity * item.unitPrice,
       0
@@ -85,22 +70,16 @@ export async function POST(req: NextRequest) {
     const validDiscount = Math.min(Math.max(0, discount || 0), subtotal);
     const total = subtotal - validDiscount;
 
-    // Executa em transação atômica
     const sale = await prisma.$transaction(async (tx) => {
-      // Verifica estoque e reduz
       for (const item of items) {
         const product = await tx.product.findUnique({ where: { id: item.productId } });
-        if (!product)
-          throw new Error(`Produto ${item.productId} não encontrado`);
-
-        // Reduz estoque (permite negativo conforme regra de negócio)
+        if (!product) throw new Error(`Produto ${item.productId} não encontrado`);
         await tx.product.update({
           where: { id: item.productId },
           data: { quantity: { decrement: item.quantity } },
         });
       }
 
-      // Gera número sequencial da venda (com lock)
       const seq = await tx.saleSequence.update({
         where: { id: 1 },
         data: { lastNum: { increment: 1 } },
@@ -108,16 +87,14 @@ export async function POST(req: NextRequest) {
 
       const saleNumber = String(seq.lastNum).padStart(6, "0");
 
-      // Cria a venda
-      const newSale = await tx.sale.create({
+      return tx.sale.create({
         data: {
           saleNumber,
           subtotal,
           discount: validDiscount,
           total,
           paymentMethod: paymentMethod as PaymentMethod,
-          installments:
-            paymentMethod === "CREDIT_CARD" ? (installments || 1) : null,
+          installments: paymentMethod === "CREDIT_CARD" ? (installments || 1) : null,
           customerName: customerName?.trim() || null,
           status: "COMPLETED",
           items: {
@@ -139,8 +116,6 @@ export async function POST(req: NextRequest) {
         },
         include: { items: true },
       });
-
-      return newSale;
     });
 
     return NextResponse.json(sale, { status: 201 });

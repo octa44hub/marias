@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
-async function checkAuth() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
-}
-
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!await checkAuth()) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   try {
     const product = await prisma.product.findUnique({ where: { id: params.id } });
     if (!product) return NextResponse.json({ error: "Produto não encontrado" }, { status: 404 });
@@ -21,7 +13,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!await checkAuth()) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   try {
     const body = await req.json();
     const { code, name, quantity, price } = body;
@@ -49,7 +40,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!await checkAuth()) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   try {
     const body = await req.json();
     const { action } = body;

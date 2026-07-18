@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { Header } from "./Header";
 import { BottomNav } from "./BottomNav";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
@@ -8,12 +6,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-export async function AppLayout({ children }: AppLayoutProps) {
-  // Verifica autenticação — roda em Node.js, sem limitação de Edge Runtime
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
+export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />

@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { SessionProvider } from "@/components/providers/SessionProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
@@ -43,9 +42,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={inter.variable}>
       <body className="min-h-screen bg-gray-50">
-        <SessionProvider>
-          <ToastProvider>{children}</ToastProvider>
-        </SessionProvider>
+        <ToastProvider>{children}</ToastProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

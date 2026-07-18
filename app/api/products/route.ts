@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-
-async function checkAuth() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
-}
 
 // GET /api/products — lista todos os produtos
 export async function GET(req: NextRequest) {
-  if (!await checkAuth()) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("q") || "";
@@ -43,13 +34,10 @@ export async function GET(req: NextRequest) {
 
 // POST /api/products — cria um novo produto
 export async function POST(req: NextRequest) {
-  if (!await checkAuth()) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-
   try {
     const body = await req.json();
     const { code, name, quantity, price } = body;
 
-    // Validações
     if (!code?.trim()) return NextResponse.json({ error: "Código é obrigatório" }, { status: 400 });
     if (!name?.trim()) return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 });
     if (typeof quantity !== "number" || quantity < 0 || !Number.isInteger(quantity))
@@ -57,7 +45,6 @@ export async function POST(req: NextRequest) {
     if (typeof price !== "number" || price <= 0)
       return NextResponse.json({ error: "Valor deve ser maior que zero" }, { status: 400 });
 
-    // Verifica código duplicado
     const existing = await prisma.product.findUnique({ where: { code: code.trim() } });
     if (existing)
       return NextResponse.json({ error: "Já existe um produto com este código" }, { status: 409 });
