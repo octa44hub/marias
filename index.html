@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#c2185b">
+  <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Maria's">
@@ -12,18 +12,18 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     :root {
-      --primary: #c2185b;
-      --primary-dark: #880e4f;
-      --primary-light: #fce4ec;
-      --surface: #ffffff;
-      --bg: #fdf2f6;
-      --text: #1a1a2e;
-      --text-muted: #777;
-      --border: #e8e0e4;
-      --success: #2e7d32;
-      --warning: #e65100;
-      --danger: #c62828;
-      --shadow: 0 2px 8px rgba(194,24,91,0.08);
+      --primary: #C9A227;
+      --primary-dark: #A67C00;
+      --primary-light: rgba(201,162,39,0.15);
+      --surface: #1C1C1C;
+      --bg: #111111;
+      --text: #F0EEE8;
+      --text-muted: #888;
+      --border: #2E2E2E;
+      --success: #4CAF50;
+      --warning: #FF9800;
+      --danger: #EF5350;
+      --shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
@@ -38,8 +38,8 @@
 
     /* ── HEADER ── */
     .header {
-      background: var(--primary);
-      color: white;
+      background: #000000;
+      color: var(--text);
       padding: 12px 16px 10px;
       display: flex;
       align-items: center;
@@ -47,32 +47,33 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      border-bottom: 1px solid var(--primary);
     }
-    .header-brand { font-size: 10px; opacity: .75; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
-    .header-title { font-size: 17px; font-weight: 800; line-height: 1.2; }
+    .header-brand { font-size: 10px; color: var(--primary); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .9; }
+    .header-title { font-size: 17px; font-weight: 800; line-height: 1.2; color: var(--text); }
     .sync-dot {
       width: 8px; height: 8px; border-radius: 50%;
-      background: rgba(255,255,255,.4); flex-shrink: 0; transition: background .3s;
+      background: #444; flex-shrink: 0; transition: background .3s;
     }
     .sync-dot.ok      { background: #69f0ae; }
-    .sync-dot.syncing { background: #ffe57f; animation: pulse .8s infinite; }
-    .sync-dot.error   { background: #ff6b6b; }
+    .sync-dot.syncing { background: var(--primary); animation: pulse .8s infinite; }
+    .sync-dot.error   { background: var(--danger); }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
     .sync-row { display: flex; align-items: center; gap: 5px; }
-    .sync-lbl { font-size: 10px; opacity: .8; }
+    .sync-lbl { font-size: 10px; color: var(--text-muted); }
 
     /* ── BOTTOM NAV ── */
     .bottom-nav {
       position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
       width: 100%; max-width: 430px;
-      background: white; border-top: 1px solid var(--border);
+      background: #000; border-top: 1px solid var(--primary);
       display: flex; z-index: 100;
       padding-bottom: env(safe-area-inset-bottom);
     }
     .nav-tab {
       flex: 1; padding: 8px 4px 6px;
       display: flex; flex-direction: column; align-items: center; gap: 2px;
-      cursor: pointer; color: var(--text-muted);
+      cursor: pointer; color: #555;
       border: none; background: none; font-family: inherit; transition: color .2s;
     }
     .nav-tab.active { color: var(--primary); }
@@ -80,7 +81,7 @@
     .nav-tab .nav-label { font-size: 10px; font-weight: 600; }
     .badge {
       position: absolute; top: -4px; right: -8px;
-      background: var(--primary); color: white;
+      background: var(--primary); color: #000;
       border-radius: 10px; font-size: 9px; font-weight: 800;
       padding: 1px 5px; min-width: 17px; text-align: center; display: none;
     }
@@ -89,7 +90,7 @@
     .main { padding: 12px 12px 82px; }
 
     /* ── CARD ── */
-    .card { background: white; border-radius: 14px; padding: 14px; box-shadow: var(--shadow); margin-bottom: 10px; }
+    .card { background: var(--surface); border-radius: 14px; padding: 14px; box-shadow: var(--shadow); margin-bottom: 10px; border: 1px solid var(--border); }
 
     /* ── BUTTONS ── */
     .btn {
@@ -99,13 +100,13 @@
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     }
     .btn:active { opacity: .8; }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-success { background: var(--success); color: white; }
+    .btn-primary { background: var(--primary); color: #000; font-weight: 800; }
+    .btn-success { background: var(--success); color: #000; }
     .btn-danger  { background: var(--danger);  color: white; }
     .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
     .btn-ghost   { background: transparent; color: var(--text-muted); }
     .btn-block   { width: 100%; }
-    .btn:disabled { opacity: .45; pointer-events: none; }
+    .btn:disabled { opacity: .35; pointer-events: none; }
 
     /* ── INPUTS ── */
     .field { margin-bottom: 14px; }
@@ -114,89 +115,91 @@
       width: 100%; padding: 11px 13px;
       border: 1.5px solid var(--border); border-radius: 10px;
       font-size: 15px; font-family: inherit; outline: none;
-      transition: border-color .2s; background: white; color: var(--text);
+      transition: border-color .2s; background: #0a0a0a; color: var(--text);
     }
     .input:focus { border-color: var(--primary); }
     select.input { appearance: auto; }
+    select.input option { background: #1C1C1C; }
 
     /* ── SEARCH BAR ── */
     .search {
       width: 100%; padding: 10px 14px;
       border: 1.5px solid var(--border); border-radius: 24px;
       font-size: 14px; font-family: inherit; outline: none;
-      background: white; margin-bottom: 12px;
+      background: #0a0a0a; color: var(--text); margin-bottom: 12px;
     }
     .search:focus { border-color: var(--primary); }
+    .search::placeholder { color: var(--text-muted); }
 
     /* ── PRODUCT GRID (PDV) ── */
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .prod-card {
-      background: white; border-radius: 12px; padding: 11px 10px;
+      background: var(--surface); border-radius: 12px; padding: 11px 10px;
       box-shadow: var(--shadow); cursor: pointer;
-      border: 2px solid transparent; position: relative;
+      border: 2px solid var(--border); position: relative;
       transition: border-color .15s, transform .1s;
     }
     .prod-card:active { transform: scale(.97); }
     .prod-card.in-cart  { border-color: var(--primary); }
-    .prod-card.esgotado { opacity: .45; pointer-events: none; }
+    .prod-card.esgotado { opacity: .35; pointer-events: none; }
     .prod-card .p-cod  { font-size: 10px; font-weight: 700; color: var(--text-muted); }
-    .prod-card .p-nome { font-size: 13px; font-weight: 700; margin: 2px 0 4px; line-height: 1.3; }
+    .prod-card .p-nome { font-size: 13px; font-weight: 700; margin: 2px 0 4px; line-height: 1.3; color: var(--text); }
     .prod-card .p-preco{ font-size: 16px; font-weight: 800; color: var(--primary); }
     .prod-card .p-est  { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
     .prod-card .p-alerta { position: absolute; top: 6px; right: 7px; font-size: 13px; }
     .cart-dot {
       position: absolute; top: -6px; left: -6px;
-      background: var(--primary); color: white;
+      background: var(--primary); color: #000;
       border-radius: 50%; width: 20px; height: 20px;
       font-size: 11px; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
     }
 
-
     /* ── CART ITEMS ── */
-    .cart-item { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #f5f0f3; gap: 8px; }
+    .cart-item { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); gap: 8px; }
     .cart-item:last-child { border-bottom: none; }
     .ci-info { flex: 1; }
-    .ci-nome { font-size: 13px; font-weight: 700; }
+    .ci-nome { font-size: 13px; font-weight: 700; color: var(--text); }
     .ci-sub  { font-size: 11px; color: var(--text-muted); }
     .qty-row { display: flex; align-items: center; gap: 8px; }
     .qty-btn {
       width: 28px; height: 28px; border-radius: 50%;
-      border: 1.5px solid; background: white;
+      border: 1.5px solid; background: transparent;
       font-size: 16px; font-weight: 800; cursor: pointer;
       display: flex; align-items: center; justify-content: center; font-family: inherit;
     }
     .qty-btn.minus { border-color: var(--danger);  color: var(--danger); }
     .qty-btn.plus  { border-color: var(--primary); color: var(--primary); }
-    .qty-val { font-size: 15px; font-weight: 800; min-width: 20px; text-align: center; }
+    .qty-val { font-size: 15px; font-weight: 800; min-width: 20px; text-align: center; color: var(--text); }
 
     /* ── CART TOTAL ── */
     .cart-total {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 0; border-top: 2px solid var(--border); margin-top: 4px;
+      padding: 12px 0; border-top: 1px solid var(--border); margin-top: 4px;
     }
-    .total-lbl { font-size: 14px; font-weight: 700; }
+    .total-lbl { font-size: 14px; font-weight: 700; color: var(--text); }
     .total-val { font-size: 24px; font-weight: 800; color: var(--primary); }
 
     /* ── PAYMENT METHODS ── */
     .pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
     .pay-btn {
-      padding: 10px 6px; border: 2px solid var(--border); border-radius: 11px;
-      background: white; cursor: pointer; text-align: center; font-family: inherit; transition: all .15s;
+      padding: 10px 6px; border: 1.5px solid var(--border); border-radius: 11px;
+      background: #0a0a0a; cursor: pointer; text-align: center; font-family: inherit; transition: all .15s;
     }
     .pay-btn .pay-ico { font-size: 22px; display: block; }
-    .pay-btn .pay-lbl { font-size: 12px; font-weight: 700; color: var(--text); display: block; margin-top: 2px; }
+    .pay-btn .pay-lbl { font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-top: 2px; }
     .pay-btn.sel { border-color: var(--primary); background: var(--primary-light); }
+    .pay-btn.sel .pay-lbl { color: var(--primary); }
 
     /* ── PRODUCT LIST (Produtos) ── */
     .prod-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .prod-row:last-child { border-bottom: none; }
     .pr-info { flex: 1; }
     .pr-cod  { font-size: 10px; font-weight: 700; color: var(--text-muted); }
-    .pr-nome { font-size: 14px; font-weight: 700; }
+    .pr-nome { font-size: 14px; font-weight: 700; color: var(--text); }
     .pr-preco{ font-size: 12px; color: var(--primary); font-weight: 700; }
     .pr-est  { text-align: center; min-width: 46px; }
-    .est-num { font-size: 20px; font-weight: 900; }
+    .est-num { font-size: 20px; font-weight: 900; color: var(--text); }
     .est-num.low  { color: var(--warning); }
     .est-num.zero { color: var(--danger); }
     .est-lbl { font-size: 9px; color: var(--text-muted); }
@@ -205,8 +208,8 @@
       font-size: 16px; cursor: pointer; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
     }
-    .icon-btn:active { background: #f0e8ec; }
-    .prod-inativo { opacity: .45; }
+    .icon-btn:active { background: #2a2a2a; }
+    .prod-inativo { opacity: .35; }
     .filter-chips {
       display: flex; gap: 6px; overflow-x: auto;
       padding-bottom: 10px; margin-bottom: 4px; scrollbar-width: none;
@@ -214,26 +217,26 @@
     .filter-chips::-webkit-scrollbar { display: none; }
     .fchip {
       white-space: nowrap; padding: 6px 14px; border-radius: 20px;
-      border: 1.5px solid var(--border); background: white;
+      border: 1.5px solid var(--border); background: #0a0a0a;
       color: var(--text-muted); font-size: 12px; font-weight: 700;
       cursor: pointer; font-family: inherit; flex-shrink: 0; transition: all .15s;
     }
-    .fchip.on { border-color: var(--primary); background: var(--primary); color: white; }
+    .fchip.on { border-color: var(--primary); background: var(--primary); color: #000; }
 
     /* ── MODAL ── */
     .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      position: fixed; inset: 0; background: rgba(0,0,0,.7);
       z-index: 300; display: none; align-items: flex-end; justify-content: center;
     }
     .modal-overlay.open { display: flex; }
-    .modal { background: white; border-radius: 20px 20px 0 0; padding: 20px 20px 28px; width: 100%; max-width: 430px; max-height: 90dvh; overflow-y: auto; }
+    .modal { background: #1A1A1A; border-radius: 20px 20px 0 0; padding: 20px 20px 28px; width: 100%; max-width: 430px; max-height: 90dvh; overflow-y: auto; border-top: 1px solid var(--primary); }
     .modal-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-    .modal-title { font-size: 17px; font-weight: 800; }
+    .modal-title { font-size: 17px; font-weight: 800; color: var(--text); }
     .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); padding: 2px; }
 
     /* ── CUSTOMER CARDS (Fiado) ── */
-    .cust-card { background: white; border-radius: 12px; padding: 13px; box-shadow: var(--shadow); margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
-    .cust-nome  { font-size: 15px; font-weight: 800; }
+    .cust-card { background: var(--surface); border-radius: 12px; padding: 13px; box-shadow: var(--shadow); margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border); }
+    .cust-nome  { font-size: 15px; font-weight: 800; color: var(--text); }
     .cust-phone { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
     .cust-count { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
     .debt-wrap  { text-align: right; }
@@ -243,7 +246,7 @@
 
     /* ── STATS (Relatórios) ── */
     .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-    .stat-card { background: white; border-radius: 12px; padding: 12px; box-shadow: var(--shadow); text-align: center; }
+    .stat-card { background: var(--surface); border-radius: 12px; padding: 12px; box-shadow: var(--shadow); text-align: center; border: 1px solid var(--border); }
     .stat-lbl { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
     .stat-val { font-size: 18px; font-weight: 800; color: var(--primary); margin-top: 3px; }
 
@@ -251,31 +254,32 @@
     .sale-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--border); }
     .sale-row:last-child { border-bottom: none; }
     .sr-time  { font-size: 10px; color: var(--text-muted); }
-    .sr-items { font-size: 13px; font-weight: 600; margin: 1px 0; }
+    .sr-items { font-size: 13px; font-weight: 600; margin: 1px 0; color: var(--text); }
     .chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
-    .chip-dinheiro { background: #e8f5e9; color: #2e7d32; }
-    .chip-pix      { background: #e3f2fd; color: #1565c0; }
-    .chip-cartao   { background: #f3e5f5; color: #6a1b9a; }
-    .chip-fiado    { background: #fff3e0; color: #e65100; }
-    .sr-total { font-size: 16px; font-weight: 900; }
+    .chip-dinheiro { background: #1a2e1a; color: #69f0ae; }
+    .chip-pix      { background: #0a1a2e; color: #64b5f6; }
+    .chip-cartao   { background: #1e0a2e; color: #ce93d8; }
+    .chip-fiado    { background: rgba(201,162,39,0.2); color: var(--primary); }
+    .sr-total { font-size: 16px; font-weight: 900; color: var(--text); }
 
     /* ── EMPTY STATE ── */
     .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
     .empty .e-ico  { font-size: 44px; margin-bottom: 10px; }
-    .empty .e-text { font-size: 15px; font-weight: 700; }
+    .empty .e-text { font-size: 15px; font-weight: 700; color: var(--text-muted); }
     .empty .e-sub  { font-size: 13px; margin-top: 4px; }
 
     /* ── SECTION HEADER ── */
     .sec-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .sec-title { font-size: 14px; font-weight: 800; }
+    .sec-title { font-size: 14px; font-weight: 800; color: var(--text); }
 
     /* ── TOAST ── */
     .toast {
       position: fixed; bottom: 84px; left: 50%;
       transform: translateX(-50%) translateY(12px);
-      background: #222; color: white;
+      background: #000; color: var(--primary);
+      border: 1px solid var(--primary);
       padding: 9px 18px; border-radius: 20px;
-      font-size: 13px; font-weight: 600;
+      font-size: 13px; font-weight: 700;
       opacity: 0; transition: all .25s; z-index: 500;
       white-space: nowrap; pointer-events: none;
     }
@@ -283,15 +287,15 @@
 
     /* ── BACK ROW ── */
     .back-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-    .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; line-height: 1; }
+    .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; line-height: 1; color: var(--text); }
 
     /* ── PDV SUGGESTIONS ── */
     .sugg-wrap { position: relative; margin-bottom: 8px; }
     .sugg-list {
       position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-      background: white; border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.15);
-      border: 1.5px solid var(--border);
+      background: #1A1A1A; border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.7);
+      border: 1px solid var(--primary);
       z-index: 50; overflow: hidden; max-height: 280px; overflow-y: auto;
     }
     .sugg-item {
@@ -303,7 +307,7 @@
     .sugg-item:active { background: var(--primary-light); }
     .sugg-left  { display: flex; align-items: baseline; gap: 6px; }
     .sugg-code  { font-size: 10px; font-weight: 800; color: var(--primary); }
-    .sugg-name  { font-size: 13px; font-weight: 600; }
+    .sugg-name  { font-size: 13px; font-weight: 600; color: var(--text); }
     .sugg-right { text-align: right; flex-shrink: 0; margin-left: 8px; }
     .sugg-price { font-size: 14px; font-weight: 900; color: var(--primary); display: block; }
     .sugg-stock { font-size: 10px; color: var(--text-muted); }
@@ -312,20 +316,21 @@
     /* ── PDV ITEMS ── */
     .pdv-item {
       display: flex; align-items: center; gap: 10px;
-      padding: 10px 0; border-bottom: 1px solid #f5f0f3;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
     }
     .pdv-item:last-child { border-bottom: none; }
     .pdv-item-info { flex: 1; min-width: 0; }
-    .pdv-item-tag  { font-size: 9px; background: #f3e5f5; color: #6a1b9a; padding: 1px 7px; border-radius: 8px; font-weight: 700; display: inline-block; margin-bottom: 2px; }
-    .pdv-item-nome { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pdv-item-tag  { font-size: 9px; background: rgba(201,162,39,0.2); color: var(--primary); padding: 1px 7px; border-radius: 8px; font-weight: 700; display: inline-block; margin-bottom: 2px; }
+    .pdv-item-nome { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
     .pdv-item-sub  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
     .pdv-avulso-btn {
       width: 100%; margin-top: 10px; padding: 11px;
-      border: 1.5px dashed var(--border); border-radius: 10px;
+      border: 1.5px dashed #3a3a3a; border-radius: 10px;
       background: transparent; color: var(--text-muted);
       font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: border-color .15s, color .15s;
     }
-    .pdv-avulso-btn:active { background: #f5f5f5; }
+    .pdv-avulso-btn:active { border-color: var(--primary); color: var(--primary); }
   </style>
 </head>
 <body>
@@ -333,7 +338,7 @@
 <!-- HEADER -->
 <header class="header">
   <div style="display:flex;align-items:center;gap:10px;">
-    <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0;">
+    <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid var(--primary);">
     <div>
       <div class="header-brand">Maria's Confecções</div>
       <div class="header-title" id="hd-title">Início</div>
@@ -549,14 +554,14 @@ function renderHome() {
   const isTod = billingView === 'today';
   const tabStyle = (active) =>
     `padding:5px 12px;border-radius:8px;border:1.5px solid ${active?'var(--primary)':'var(--border)'};
-     background:${active?'var(--primary)':'white'};color:${active?'white':'var(--text-muted)'};
+     background:${active?'var(--primary)':'#0a0a0a'};color:${active?'#000':'var(--text-muted)'};
      font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;`;
 
   return `
     <!-- Logo -->
     <div style="text-align:center;margin-bottom:16px;">
       <img src="logo.png" alt="Maria's Confecções"
-        style="width:90px;height:90px;border-radius:20px;object-fit:cover;box-shadow:0 4px 16px rgba(194,24,91,.2);">
+        style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);box-shadow:0 0 20px rgba(201,162,39,.25);">
     </div>
 
     <!-- Faturamento -->
@@ -684,9 +689,9 @@ function renderPDV() {
           value="${esc(troco)}" oninput="troco=this.value;render()">
       </div>
       ${change!==null ? `
-        <div style="text-align:center;background:#e8f5e9;border-radius:10px;padding:10px;margin-bottom:4px;">
-          <div style="font-size:11px;color:#555;font-weight:700;">TROCO</div>
-          <div style="font-size:24px;font-weight:900;color:#2e7d32;">${fmt(change)}</div>
+        <div style="text-align:center;background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.4);border-radius:10px;padding:10px;margin-bottom:4px;">
+          <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Troco</div>
+          <div style="font-size:24px;font-weight:900;color:var(--success);">${fmt(change)}</div>
         </div>` : ''}`;
   } else if (pgto === 'fiado') {
     const custs = DB.get(K.customers);
@@ -736,8 +741,8 @@ function renderPDV() {
     ${cart.length ? `
       <div style="display:flex;justify-content:space-between;align-items:center;
            background:linear-gradient(135deg,var(--primary),var(--primary-dark));
-           color:white;border-radius:14px;padding:14px 18px;margin-bottom:10px;">
-        <span style="font-size:13px;opacity:.85;">${count} item(s)</span>
+           color:#000;border-radius:14px;padding:14px 18px;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:700;opacity:.75;">${count} item(s)</span>
         <span style="font-size:28px;font-weight:900;">${fmt(total)}</span>
       </div>` : ''}
 
@@ -1030,9 +1035,9 @@ function renderFiado() {
   const list  = custs.filter(c=>c.nome.toLowerCase().includes(cSearch.toLowerCase()));
   const totalDevido = custs.reduce((s,c)=>s+(c.debito||0), 0);
   return `
-    ${custs.length ? `<div class="card" style="text-align:center;background:linear-gradient(135deg,#fce4ec,#f8bbd0);margin-bottom:12px;">
+    ${custs.length ? `<div class="card" style="text-align:center;background:linear-gradient(135deg,rgba(201,162,39,0.18),rgba(201,162,39,0.08));border:1px solid rgba(201,162,39,0.3);margin-bottom:12px;">
       <div style="font-size:10px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.06em;">Total a receber</div>
-      <div style="font-size:30px;font-weight:900;color:var(--primary-dark);">${fmt(totalDevido)}</div>
+      <div style="font-size:30px;font-weight:900;color:var(--primary);">${fmt(totalDevido)}</div>
     </div>` : ''}
     <input class="search" type="search" placeholder="🔍 Buscar cliente..."
       value="${esc(cSearch)}" oninput="cSearch=this.value;render()">
@@ -1071,9 +1076,9 @@ function renderCustDetail() {
         ${c.telefone?`<div style="font-size:12px;color:var(--text-muted);">📞 ${esc(c.telefone)}</div>`:''}
       </div>
     </div>
-    <div class="card" style="text-align:center;background:${zero?'linear-gradient(135deg,#e8f5e9,#c8e6c9)':'linear-gradient(135deg,#fce4ec,#f8bbd0)'};margin-bottom:12px;">
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:${zero?'#2e7d32':'var(--primary)'};">Saldo devedor</div>
-      <div style="font-size:34px;font-weight:900;color:${zero?'#2e7d32':'var(--danger)'};">${fmt(c.debito||0)}</div>
+    <div class="card" style="text-align:center;background:${zero?'rgba(76,175,80,0.12)':'rgba(239,83,80,0.12)'};border:1px solid ${zero?'rgba(76,175,80,0.35)':'rgba(239,83,80,0.35)'};margin-bottom:12px;">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:${zero?'var(--success)':'var(--danger)'};">Saldo devedor</div>
+      <div style="font-size:34px;font-weight:900;color:${zero?'var(--success)':'var(--danger)'};">${fmt(c.debito||0)}</div>
     </div>
     ${!zero?`<div class="card" style="margin-bottom:12px;">
       <div class="sec-title" style="margin-bottom:10px;">Registrar pagamento</div>
@@ -1172,10 +1177,10 @@ function renderRelatorios() {
   const top    = Object.entries(pqtd).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const cLabel = {dinheiro:'Dinheiro',pix:'Pix',cartao:'Cartão',fiado:'Fiado'};
   return `
-    <div class="card" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;text-align:center;margin-bottom:12px;">
-      <div style="font-size:10px;opacity:.8;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Total hoje</div>
+    <div class="card" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#000;text-align:center;margin-bottom:12px;">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.7;">Total hoje</div>
       <div style="font-size:38px;font-weight:900;">${fmt(total)}</div>
-      <div style="font-size:12px;opacity:.75;">${hoje.length} venda(s)</div>
+      <div style="font-size:12px;opacity:.7;">${hoje.length} venda(s)</div>
     </div>
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-lbl">💵 Dinheiro</div><div class="stat-val">${fmt(byPgto('dinheiro'))}</div></div>

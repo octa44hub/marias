@@ -4,8 +4,8 @@
   "description": "Sistema de controle de vendas para bazar",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#fce4ec",
-  "theme_color": "#c2185b",
+  "background_color": "#111111",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     {
