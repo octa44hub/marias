@@ -1,5 +1,5 @@
-const CACHE = 'marias-v1';
-const FILES = ['./index.html', './manifest.json', './icon.svg'];
+const CACHE = 'marias-v2';
+const FILES = ['./index.html', './manifest.json', './logo.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(

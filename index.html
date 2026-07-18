@@ -311,9 +311,12 @@
 
 <!-- HEADER -->
 <header class="header">
-  <div>
-    <div class="header-brand">Maria's Confecções</div>
-    <div class="header-title" id="hd-title">Ponto de Venda</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0;">
+    <div>
+      <div class="header-brand">Maria's Confecções</div>
+      <div class="header-title" id="hd-title">Início</div>
+    </div>
   </div>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
     <div id="hd-action"></div>
@@ -555,6 +558,12 @@ function renderHome() {
      font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;`;
 
   return `
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:16px;">
+      <img src="logo.png" alt="Maria's Confecções"
+        style="width:90px;height:90px;border-radius:20px;object-fit:cover;box-shadow:0 4px 16px rgba(194,24,91,.2);">
+    </div>
+
     <!-- Faturamento -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
