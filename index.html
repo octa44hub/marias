@@ -329,7 +329,11 @@
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
-  <button class="nav-tab active" id="tab-pdv" onclick="go('pdv')">
+  <button class="nav-tab active" id="tab-home" onclick="go('home')">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Início</span>
+  </button>
+  <button class="nav-tab" id="tab-pdv" onclick="go('pdv')">
     <span class="nav-icon">🛒<span class="badge" id="cart-badge"></span></span>
     <span class="nav-label">PDV</span>
   </button>
@@ -451,22 +455,23 @@ const todayStr = ()  => new Date().toDateString();
 // ══════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════
-let screen    = 'pdv';
-let cart      = [];
-let cartOpen  = false;
-let pgto      = null;
-let troco     = '';
-let clienteId = null;
-let qSearch   = '';
-let cSearch   = '';
-let editProd  = null;
-let editCust  = null;
-let viewCust  = null;
+let screen       = 'home';
+let cart         = [];
+let cartOpen     = false;
+let pgto         = null;
+let troco        = '';
+let clienteId    = null;
+let qSearch      = '';
+let cSearch      = '';
+let editProd     = null;
+let editCust     = null;
+let viewCust     = null;
+let billingView  = 'today'; // 'today' | 'month'
 
 // ══════════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════════
-const TITLES = { pdv:'Ponto de Venda', produtos:'Produtos', fiado:'Fiado', relatorios:'Relatórios' };
+const TITLES = { home:'Início', pdv:'Ponto de Venda', produtos:'Produtos', fiado:'Fiado', relatorios:'Relatórios' };
 
 function go(s) {
   screen = s;
@@ -474,7 +479,9 @@ function go(s) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-'+s).classList.add('active');
   const ha = document.getElementById('hd-action');
-  if (s === 'produtos') {
+  if (s === 'home') {
+    ha.innerHTML = `<span style="font-size:12px;opacity:.8;">${new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'})}</span>`;
+  } else if (s === 'produtos') {
     ha.innerHTML = `<button onclick="openProdModal(null)"
       style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:white;
              padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
@@ -495,7 +502,8 @@ function go(s) {
 // ══════════════════════════════════════════
 function render() {
   const m = document.getElementById('main');
-  if      (screen==='pdv')       m.innerHTML = renderPDV();
+  if      (screen==='home')      m.innerHTML = renderHome();
+  else if (screen==='pdv')       m.innerHTML = renderPDV();
   else if (screen==='produtos')  m.innerHTML = renderProdutos();
   else if (screen==='fiado')     m.innerHTML = viewCust ? renderCustDetail() : renderFiado();
   else                           m.innerHTML = renderRelatorios();
@@ -520,6 +528,83 @@ function syncCartBadge() {
   const n = cart.reduce((s,i)=>s+i.quantidade, 0);
   b.textContent = n;
   b.style.display = n > 0 ? 'flex' : 'none';
+}
+
+// ══════════════════════════════════════════
+//  HOME
+// ══════════════════════════════════════════
+function renderHome() {
+  const sales = DB.get(K.sales);
+  const prods = DB.get(K.products);
+  const now   = new Date();
+  const mon   = now.getMonth();
+  const yr    = now.getFullYear();
+
+  const todaySales = sales.filter(s => new Date(s.data).toDateString() === todayStr());
+  const monthSales = sales.filter(s => { const d=new Date(s.data); return d.getMonth()===mon && d.getFullYear()===yr; });
+  const todayTotal = todaySales.reduce((s,v)=>s+v.total, 0);
+  const monthTotal = monthSales.reduce((s,v)=>s+v.total, 0);
+
+  const comEstoque  = prods.filter(p=>p.estoque>0).length;
+  const totalUnids  = prods.reduce((s,p)=>s+p.estoque, 0);
+
+  const isTod = billingView === 'today';
+  const tabStyle = (active) =>
+    `padding:5px 12px;border-radius:8px;border:1.5px solid ${active?'var(--primary)':'var(--border)'};
+     background:${active?'var(--primary)':'white'};color:${active?'white':'var(--text-muted)'};
+     font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;`;
+
+  return `
+    <!-- Faturamento -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:800;color:var(--text);">💰 Faturamento</div>
+        <div style="display:flex;gap:4px;">
+          <button style="${tabStyle(isTod)}" onclick="billingView='today';render()">Hoje</button>
+          <button style="${tabStyle(!isTod)}" onclick="billingView='month';render()">Mês</button>
+        </div>
+      </div>
+      <div style="text-align:center;padding:6px 0 10px;">
+        <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">
+          ${isTod ? 'Hoje' : now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}
+        </div>
+        <div style="font-size:44px;font-weight:900;color:var(--primary);line-height:1.1;">
+          ${fmt(isTod ? todayTotal : monthTotal)}
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+          ${isTod ? todaySales.length : monthSales.length} venda(s)
+        </div>
+      </div>
+    </div>
+
+    <!-- Estoque -->
+    <div class="card">
+      <div style="font-size:13px;font-weight:800;margin-bottom:12px;">📦 Estoque</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="text-align:center;background:var(--bg);border-radius:10px;padding:14px 8px;">
+          <div style="font-size:32px;font-weight:900;color:var(--primary);">${comEstoque}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">produtos disponíveis</div>
+        </div>
+        <div style="text-align:center;background:var(--bg);border-radius:10px;padding:14px 8px;">
+          <div style="font-size:32px;font-weight:900;color:var(--primary);">${totalUnids}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">unidades em estoque</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ações -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+      <button class="btn btn-primary btn-block" style="padding:17px;font-size:16px;" onclick="go('pdv')">
+        🛒 Abrir PDV
+      </button>
+      <button class="btn btn-outline btn-block" style="padding:17px;font-size:16px;" onclick="go('relatorios')">
+        📊 Ver relatório
+      </button>
+      <button class="btn btn-outline btn-block" style="padding:17px;font-size:16px;" onclick="go('produtos')">
+        📦 Gerenciar produtos
+      </button>
+    </div>
+  `;
 }
 
 // ══════════════════════════════════════════
@@ -1056,7 +1141,7 @@ function esc(s='') {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
-go('pdv');
+go('home');
 syncOnStart();
 </script>
 </body>
