@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PaymentMethod {
+  CASH
+  PIX
+  DEBIT_CARD
+  CREDIT_CARD
+  CREDIT_ACCOUNT
+}
+
+enum SaleStatus {
+  COMPLETED
+  CANCELLED
+}
+
+model Product {
+  id        String        @id @default(cuid())
+  code      String        @unique
+  name      String
+  quantity  Int           @default(0)
+  price     Int           // Armazenado em centavos. Ex: R$49,90 = 4990
+  status    ProductStatus @default(ACTIVE)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  saleItems SaleItem[]
+
+  @@map("products")
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  saleNumber    String        @unique @map("sale_number")
+  subtotal      Int           // centavos
+  discount      Int           @default(0) // centavos
+  total         Int           // centavos
+  paymentMethod PaymentMethod @map("payment_method")
+  installments  Int?          // apenas para CREDIT_CARD
+  customerName  String?       @map("customer_name")
+  status        SaleStatus    @default(COMPLETED)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  cancelledAt   DateTime?     @map("cancelled_at")
+  items         SaleItem[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id          String   @id @default(cuid())
+  saleId      String   @map("sale_id")
+  productId   String   @map("product_id")
+  productCode String   @map("product_code") // snapshot no momento da venda
+  productName String   @map("product_name") // snapshot
+  quantity    Int
+  unitPrice   Int      @map("unit_price")   // snapshot em centavos
+  subtotal    Int      // quantity * unitPrice
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  sale    Sale    @relation(fields: [saleId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+// Tabela auxiliar para gerar números sequenciais de venda (evita race conditions)
+model SaleSequence {
+  id      Int @id @default(1)
+  lastNum Int @default(0) @map("last_num")
+
+  @@map("sale_sequence")
+}
