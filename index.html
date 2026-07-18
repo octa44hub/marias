@@ -1368,8 +1368,8 @@ function doLogin() {
   if (!found) { showLoginErr('Usuário ou senha inválidos'); return; }
   session = { id: found.id, nome: found.nome, usuario: found.usuario, role: found.role };
   try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch(e){}
-  document.getElementById('login-wrap').style.display = 'none';
   err.style.display = 'none';
+  showApp(true);
   applySession();
   go('home');
 }
