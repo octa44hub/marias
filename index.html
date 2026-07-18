@@ -152,40 +152,6 @@
       display: flex; align-items: center; justify-content: center;
     }
 
-    /* ── FLOATING CART BUTTON ── */
-    .cart-fab {
-      position: fixed; bottom: 68px; left: 50%; transform: translateX(-50%);
-      width: calc(100% - 24px); max-width: 406px;
-      background: var(--primary); color: white;
-      border: none; border-radius: 14px; padding: 14px 16px;
-      font-size: 15px; font-weight: 700; cursor: pointer;
-      display: none; align-items: center; justify-content: space-between;
-      z-index: 150; box-shadow: 0 4px 16px rgba(194,24,91,.35); font-family: inherit;
-    }
-    .cart-fab.visible { display: flex; }
-    .cart-fab:active { opacity: .9; }
-
-    /* ── CART BOTTOM SHEET ── */
-    .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 200; display: none; }
-    .sheet-backdrop.open { display: block; }
-    .cart-sheet {
-      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
-      width: 100%; max-width: 430px;
-      background: white; border-radius: 20px 20px 0 0;
-      box-shadow: 0 -4px 24px rgba(0,0,0,.15);
-      z-index: 201; transition: transform .3s ease;
-      max-height: 88dvh; overflow-y: auto;
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-    .cart-sheet.open { transform: translateX(-50%) translateY(0); }
-    .sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 10px auto 0; }
-    .sheet-header {
-      padding: 8px 16px 12px;
-      display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-    }
-    .sheet-title { font-size: 16px; font-weight: 800; }
-    .sheet-body  { padding: 12px 16px; }
 
     /* ── CART ITEMS ── */
     .cart-item { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #f5f0f3; gap: 8px; }
@@ -318,6 +284,48 @@
     /* ── BACK ROW ── */
     .back-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
     .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; line-height: 1; }
+
+    /* ── PDV SUGGESTIONS ── */
+    .sugg-wrap { position: relative; margin-bottom: 8px; }
+    .sugg-list {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: white; border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.15);
+      border: 1.5px solid var(--border);
+      z-index: 50; overflow: hidden; max-height: 280px; overflow-y: auto;
+    }
+    .sugg-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 14px; cursor: pointer; border-bottom: 1px solid var(--border);
+      transition: background .1s;
+    }
+    .sugg-item:last-child { border-bottom: none; }
+    .sugg-item:active { background: var(--primary-light); }
+    .sugg-left  { display: flex; align-items: baseline; gap: 6px; }
+    .sugg-code  { font-size: 10px; font-weight: 800; color: var(--primary); }
+    .sugg-name  { font-size: 13px; font-weight: 600; }
+    .sugg-right { text-align: right; flex-shrink: 0; margin-left: 8px; }
+    .sugg-price { font-size: 14px; font-weight: 900; color: var(--primary); display: block; }
+    .sugg-stock { font-size: 10px; color: var(--text-muted); }
+    .sugg-empty { padding: 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+    /* ── PDV ITEMS ── */
+    .pdv-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid #f5f0f3;
+    }
+    .pdv-item:last-child { border-bottom: none; }
+    .pdv-item-info { flex: 1; min-width: 0; }
+    .pdv-item-tag  { font-size: 9px; background: #f3e5f5; color: #6a1b9a; padding: 1px 7px; border-radius: 8px; font-weight: 700; display: inline-block; margin-bottom: 2px; }
+    .pdv-item-nome { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pdv-item-sub  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .pdv-avulso-btn {
+      width: 100%; margin-top: 10px; padding: 11px;
+      border: 1.5px dashed var(--border); border-radius: 10px;
+      background: transparent; color: var(--text-muted);
+      font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .pdv-avulso-btn:active { background: #f5f5f5; }
   </style>
 </head>
 <body>
@@ -366,23 +374,6 @@
     <span class="nav-label">Relatórios</span>
   </button>
 </nav>
-
-<!-- CART FAB -->
-<button class="cart-fab" id="cart-fab" onclick="openCart()">
-  <span id="fab-label">🛒 Ver carrinho</span>
-  <span id="fab-total"></span>
-</button>
-
-<!-- CART BACKDROP + SHEET -->
-<div class="sheet-backdrop" id="sheet-bd" onclick="closeCart()"></div>
-<div class="cart-sheet" id="cart-sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-header">
-    <span class="sheet-title">🛒 Carrinho</span>
-    <button class="close-btn" onclick="closeCart()">✕</button>
-  </div>
-  <div class="sheet-body" id="cart-body"></div>
-</div>
 
 <!-- MODAL -->
 <div class="modal-overlay" id="modal-ov">
@@ -473,17 +464,18 @@ const todayStr = ()  => new Date().toDateString();
 // ══════════════════════════════════════════
 let screen       = 'home';
 let cart         = [];
-let cartOpen     = false;
 let pgto         = null;
 let troco        = '';
 let clienteId    = null;
 let qSearch      = '';
 let cSearch      = '';
+let pdvSearch    = '';     // busca no PDV
+let showSugg     = false;  // mostrar sugestões
 let editProd     = null;
 let editCust     = null;
 let viewCust     = null;
-let billingView  = 'today'; // 'today' | 'month'
-let prodFilter   = 'todos'; // 'todos'|'em_estoque'|'estoque_baixo'|'esgotados'|'inativos'
+let billingView  = 'today';
+let prodFilter   = 'todos';
 
 // ══════════════════════════════════════════
 //  NAVIGATION
@@ -510,7 +502,7 @@ function go(s) {
       + Cliente</button>`;
   } else { ha.innerHTML = ''; }
   viewCust = null;
-  closeCart();
+  if (s !== 'pdv') { pdvSearch = ''; showSugg = false; }
   render();
 }
 
@@ -524,21 +516,9 @@ function render() {
   else if (screen==='produtos')  m.innerHTML = renderProdutos();
   else if (screen==='fiado')     m.innerHTML = viewCust ? renderCustDetail() : renderFiado();
   else                           m.innerHTML = renderRelatorios();
-  syncCartFAB();
   syncCartBadge();
-  if (cartOpen) rebuildCartBody();
 }
 
-function syncCartFAB() {
-  const fab   = document.getElementById('cart-fab');
-  const count = cart.reduce((s,i)=>s+i.quantidade, 0);
-  const total = cart.reduce((s,i)=>s+(i.preco*i.quantidade), 0);
-  if (count > 0 && screen==='pdv' && !cartOpen) {
-    fab.classList.add('visible');
-    document.getElementById('fab-label').textContent = `🛒 Ver carrinho (${count})`;
-    document.getElementById('fab-total').textContent = fmt(total);
-  } else { fab.classList.remove('visible'); }
-}
 
 function syncCartBadge() {
   const b = document.getElementById('cart-badge');
@@ -635,45 +615,158 @@ function renderHome() {
 //  PDV
 // ══════════════════════════════════════════
 function renderPDV() {
-  const prods = DB.get(K.products);
-  if (!prods.length) return `<div class="empty"><div class="e-ico">📦</div>
-    <div class="e-text">Nenhum produto cadastrado</div>
-    <div class="e-sub">Vá em Produtos para adicionar</div></div>`;
+  const prods  = DB.get(K.products);
+  const total  = cart.reduce((s,i)=>s+(i.preco*i.quantidade), 0);
+  const count  = cart.reduce((s,i)=>s+i.quantidade, 0);
 
-  const list = prods.filter(p =>
-    p.ativo !== false && (
-      p.nome.toLowerCase().includes(qSearch.toLowerCase()) ||
-      p.codigo.toLowerCase().includes(qSearch.toLowerCase())
-    )
-  );
+  // ── Sugestões ──────────────────────────
+  let suggsHtml = '';
+  if (pdvSearch.trim() && showSugg) {
+    const q = pdvSearch.toLowerCase();
+    const matches = prods.filter(p =>
+      p.ativo !== false && p.estoque > 0 && (
+        p.codigo.toLowerCase().includes(q) ||
+        p.nome.toLowerCase().includes(q)
+      )
+    ).slice(0, 7);
+    suggsHtml = `<div class="sugg-list">` + (
+      matches.length
+        ? matches.map(p => `
+            <div class="sugg-item" onmousedown="selectProd('${p.id}')">
+              <div class="sugg-left">
+                <span class="sugg-code">${esc(p.codigo)}</span>
+                <span class="sugg-name">${esc(p.nome)}</span>
+              </div>
+              <div class="sugg-right">
+                <span class="sugg-price">${fmt(p.preco)}</span>
+                <span class="sugg-stock">est: ${p.estoque}</span>
+              </div>
+            </div>`).join('')
+        : `<div class="sugg-empty">Nenhum produto encontrado</div>`
+    ) + `</div>`;
+  }
 
-  const cards = list.map(p => {
-    const ci  = cart.find(c=>c.id===p.id);
-    const qty = ci ? ci.quantidade : 0;
-    const low = p.estoque > 0 && p.estoque <= 2;
-    const out = p.estoque === 0;
-    return `<div class="prod-card${ci?' in-cart':''}${out?' esgotado':''}" onclick="addToCart('${p.id}')">
-      ${qty ? `<div class="cart-dot">${qty}</div>` : ''}
-      ${low ? `<div class="p-alerta">⚠️</div>` : ''}
-      <div class="p-cod">${esc(p.codigo)}</div>
-      <div class="p-nome">${esc(p.nome)}</div>
-      <div class="p-preco">${fmt(p.preco)}</div>
-      <div class="p-est">Estoque: ${p.estoque}${out?' · Esgotado':''}</div>
-    </div>`;
-  }).join('');
+  // ── Itens do carrinho ──────────────────
+  const itemsHtml = !cart.length
+    ? `<div class="empty" style="padding:24px 0;">
+        <div class="e-ico">🛒</div>
+        <div class="e-text">Nenhum item</div>
+        <div class="e-sub">Busque um produto acima</div>
+       </div>`
+    : cart.map(it => `
+        <div class="pdv-item">
+          <div class="pdv-item-info">
+            ${it.avulso ? '<span class="pdv-item-tag">AVULSO</span>' : ''}
+            <div class="pdv-item-nome">${esc(it.nome)}</div>
+            <div class="pdv-item-sub">${fmt(it.preco)} × ${it.quantidade} = <strong>${fmt(it.preco*it.quantidade)}</strong></div>
+          </div>
+          <div class="qty-row">
+            <button class="qty-btn minus" onclick="chQty('${it.id}',-1)">−</button>
+            <span class="qty-val">${it.quantidade}</span>
+            <button class="qty-btn plus" onclick="chQty('${it.id}',+1)">+</button>
+          </div>
+        </div>`).join('');
+
+  // ── Pagamento ──────────────────────────
+  const payBtns = ['dinheiro','pix','cartao','fiado'].map(m => `
+    <button class="pay-btn${pgto===m?' sel':''}" onclick="selPgto('${m}')">
+      <span class="pay-ico">${{dinheiro:'💵',pix:'📱',cartao:'💳',fiado:'📋'}[m]}</span>
+      <span class="pay-lbl">${{dinheiro:'Dinheiro',pix:'Pix',cartao:'Cartão',fiado:'Fiado'}[m]}</span>
+    </button>`).join('');
+
+  let payExtra = '';
+  if (pgto === 'dinheiro') {
+    const change = troco ? Math.max(0, parseFloat(troco.replace(',','.')) - total) : null;
+    payExtra = `
+      <div class="field" style="margin-top:12px;">
+        <label>Valor recebido (R$)</label>
+        <input class="input" type="number" inputmode="decimal" placeholder="0,00"
+          value="${esc(troco)}" oninput="troco=this.value;render()">
+      </div>
+      ${change!==null ? `
+        <div style="text-align:center;background:#e8f5e9;border-radius:10px;padding:10px;margin-bottom:4px;">
+          <div style="font-size:11px;color:#555;font-weight:700;">TROCO</div>
+          <div style="font-size:24px;font-weight:900;color:#2e7d32;">${fmt(change)}</div>
+        </div>` : ''}`;
+  } else if (pgto === 'fiado') {
+    const custs = DB.get(K.customers);
+    const opts = custs.map(c =>
+      `<option value="${c.id}"${clienteId===c.id?' selected':''}>${esc(c.nome)}${c.telefone?' ('+esc(c.telefone)+')':''}</option>`
+    ).join('');
+    payExtra = `
+      <div class="field" style="margin-top:12px;">
+        <label>Cliente *</label>
+        <select class="input" onchange="clienteId=this.value">
+          <option value="">Selecionar cliente...</option>
+          ${opts}
+        </select>
+      </div>
+      <button class="btn btn-outline btn-block" style="margin-bottom:4px;font-size:13px;"
+        onclick="openCustModal(null,true)">+ Novo cliente</button>`;
+  }
+
+  const canFin = cart.length > 0 && pgto && (pgto !== 'fiado' || clienteId);
 
   return `
-    <input class="search" type="search" placeholder="🔍 Buscar por código ou nome..."
-      value="${esc(qSearch)}" oninput="qSearch=this.value;render()">
-    ${list.length
-      ? `<div class="grid2">${cards}</div>`
-      : `<div class="empty"><div class="e-ico">🔍</div><div class="e-text">Nenhum resultado</div></div>`}`;
+    <!-- 1. Busca -->
+    <div class="sugg-wrap">
+      <input class="search" type="search" style="margin-bottom:0;"
+        placeholder="🔍 Digite o código ou nome do produto..."
+        value="${esc(pdvSearch)}"
+        oninput="pdvSearch=this.value;showSugg=true;render()"
+        onfocus="showSugg=true;render()"
+        onblur="setTimeout(()=>{showSugg=false;render();},180)">
+      ${suggsHtml}
+    </div>
+
+    <!-- 2. Itens -->
+    <div class="card">
+      <div class="sec-hd" style="margin-bottom:${cart.length?'8px':'0'};">
+        <div class="sec-title">
+          Itens da venda
+          ${count > 0 ? `<span style="background:var(--primary);color:white;border-radius:10px;font-size:11px;padding:1px 8px;margin-left:6px;">${count}</span>` : ''}
+        </div>
+        ${cart.length ? `<button class="btn btn-ghost" style="font-size:12px;color:var(--danger);padding:4px 8px;" onclick="clearCart()">Limpar</button>` : ''}
+      </div>
+      ${itemsHtml}
+      <button class="pdv-avulso-btn" onclick="openAvulsoModal()">+ Adicionar item avulso</button>
+    </div>
+
+    <!-- 3. Resumo -->
+    ${cart.length ? `
+      <div style="display:flex;justify-content:space-between;align-items:center;
+           background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+           color:white;border-radius:14px;padding:14px 18px;margin-bottom:10px;">
+        <span style="font-size:13px;opacity:.85;">${count} item(s)</span>
+        <span style="font-size:28px;font-weight:900;">${fmt(total)}</span>
+      </div>` : ''}
+
+    <!-- 4. Pagamento -->
+    <div class="card">
+      <div class="sec-title" style="margin-bottom:10px;">💳 Pagamento</div>
+      <div class="pay-grid">${payBtns}</div>
+      ${payExtra}
+    </div>
+
+    <!-- 5. Finalizar -->
+    <button class="btn btn-primary btn-block"
+      style="padding:17px;font-size:16px;margin-bottom:4px;"
+      onclick="finalize()" ${canFin?'':'disabled'}>
+      ✓ Finalizar venda
+    </button>
+    ${!pgto && cart.length ? `<div style="text-align:center;font-size:12px;color:var(--text-muted);padding-bottom:4px;">Selecione a forma de pagamento</div>` : ''}
+  `;
+}
+
+function selectProd(pid) {
+  pdvSearch = ''; showSugg = false;
+  addToCart(pid);
 }
 
 function addToCart(pid) {
   const prods = DB.get(K.products);
   const p = prods.find(x=>x.id===pid);
-  if (!p || p.estoque===0) return;
+  if (!p || p.estoque===0 || p.ativo===false) return;
   const ex = cart.find(c=>c.id===pid);
   if (ex) {
     if (ex.quantidade >= p.estoque) { showToast('Estoque máximo atingido'); return; }
@@ -687,119 +780,66 @@ function addToCart(pid) {
 // ══════════════════════════════════════════
 //  CART
 // ══════════════════════════════════════════
-function openCart() {
-  if (!cart.length) return;
-  cartOpen = true;
-  pgto = null; troco = ''; clienteId = null;
-  document.getElementById('cart-sheet').classList.add('open');
-  document.getElementById('sheet-bd').classList.add('open');
-  document.getElementById('cart-fab').classList.remove('visible');
-  rebuildCartBody();
-}
-
-function closeCart() {
-  cartOpen = false;
-  document.getElementById('cart-sheet').classList.remove('open');
-  document.getElementById('sheet-bd').classList.remove('open');
-  syncCartFAB();
-}
-
-function rebuildCartBody() {
-  const total = cart.reduce((s,i)=>s+(i.preco*i.quantidade), 0);
-
-  const items = cart.map(it => `
-    <div class="cart-item">
-      <div class="ci-info">
-        <div class="ci-nome">${esc(it.nome)}</div>
-        <div class="ci-sub">${fmt(it.preco)} × ${it.quantidade} = ${fmt(it.preco*it.quantidade)}</div>
-      </div>
-      <div class="qty-row">
-        <button class="qty-btn minus" onclick="chQty('${it.id}',-1)">−</button>
-        <span class="qty-val">${it.quantidade}</span>
-        <button class="qty-btn plus"  onclick="chQty('${it.id}',+1)">+</button>
-      </div>
-    </div>`).join('');
-
-  const payBtns = ['dinheiro','pix','cartao','fiado'].map(m => `
-    <button class="pay-btn${pgto===m?' sel':''}" onclick="selPgto('${m}')">
-      <span class="pay-ico">${{dinheiro:'💵',pix:'📱',cartao:'💳',fiado:'📋'}[m]}</span>
-      <span class="pay-lbl">${{dinheiro:'Dinheiro',pix:'Pix',cartao:'Cartão',fiado:'Fiado'}[m]}</span>
-    </button>`).join('');
-
-  let extra = '';
-  if (pgto === 'dinheiro') {
-    const change = troco ? Math.max(0, parseFloat(troco.replace(',','.')) - total) : null;
-    extra = `
-      <div class="field">
-        <label>Valor recebido (R$)</label>
-        <input class="input" type="number" inputmode="decimal" placeholder="0,00"
-          value="${esc(troco)}" oninput="troco=this.value;rebuildCartBody()">
-      </div>
-      ${change!==null ? `<div class="card" style="text-align:center;background:#e8f5e9;margin-bottom:12px;">
-        <div style="font-size:11px;color:#555;font-weight:700;">TROCO</div>
-        <div style="font-size:26px;font-weight:900;color:#2e7d32;">${fmt(change)}</div>
-      </div>` : ''}`;
-  } else if (pgto === 'fiado') {
-    const custs = DB.get(K.customers);
-    const opts = custs.map(c =>
-      `<option value="${c.id}"${clienteId===c.id?' selected':''}>${esc(c.nome)}${c.telefone?' ('+esc(c.telefone)+')':''}</option>`
-    ).join('');
-    extra = `
-      <div class="field">
-        <label>Cliente *</label>
-        <select class="input" onchange="clienteId=this.value">
-          <option value="">Selecionar cliente...</option>
-          ${opts}
-        </select>
-      </div>
-      <button class="btn btn-outline btn-block" style="margin-bottom:12px;font-size:13px;"
-        onclick="openCustModal(null,true)">+ Novo cliente</button>`;
-  }
-
-  const canFin = pgto && (pgto !== 'fiado' || clienteId);
-
-  document.getElementById('cart-body').innerHTML = `
-    ${items}
-    <div class="cart-total">
-      <span class="total-lbl">Total</span>
-      <span class="total-val">${fmt(total)}</span>
-    </div>
-    <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Pagamento</div>
-    <div class="pay-grid">${payBtns}</div>
-    ${extra}
-    <button class="btn btn-primary btn-block" style="padding:14px;font-size:15px;margin-top:6px;"
-      onclick="finalize()" ${canFin?'':'disabled'}>
-      ✓ Finalizar venda
-    </button>
-    <button class="btn btn-ghost btn-block" style="margin-top:6px;color:var(--danger);font-size:13px;"
-      onclick="clearCart()">🗑 Limpar carrinho</button>
-    <div style="height:12px;"></div>`;
-}
-
 function chQty(pid, delta) {
-  const p  = DB.get(K.products).find(x=>x.id===pid);
   const it = cart.find(c=>c.id===pid);
   if (!it) return;
-  it.quantidade += delta;
-  if (delta > 0 && it.quantidade > p.estoque) { it.quantidade=p.estoque; showToast('Estoque máximo'); }
-  if (it.quantidade <= 0) cart = cart.filter(c=>c.id!==pid);
-  if (!cart.length) { closeCart(); render(); return; }
-  render(); rebuildCartBody();
+  if (it.avulso) {
+    it.quantidade = Math.max(1, it.quantidade + delta);
+    if (delta < 0 && it.quantidade < 1) cart = cart.filter(c=>c.id!==pid);
+  } else {
+    const p = DB.get(K.products).find(x=>x.id===pid);
+    it.quantidade += delta;
+    if (delta > 0 && p && it.quantidade > p.estoque) { it.quantidade=p.estoque; showToast('Estoque máximo'); }
+    if (it.quantidade <= 0) cart = cart.filter(c=>c.id!==pid);
+  }
+  render();
 }
 
 function clearCart() {
-  if (!confirm('Limpar carrinho?')) return;
-  cart=[]; closeCart(); render();
+  if (!confirm('Limpar itens da venda?')) return;
+  cart=[]; pgto=null; troco=''; clienteId=null; render();
 }
 
-function selPgto(m) { pgto=m; troco=''; clienteId=null; rebuildCartBody(); }
+function selPgto(m) { pgto=m; troco=''; clienteId=null; render(); }
+
+function openAvulsoModal() {
+  document.getElementById('modal-ov').classList.add('open');
+  document.getElementById('modal-box').innerHTML = `
+    <div class="modal-hd">
+      <div class="modal-title">Item avulso</div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Para produtos não cadastrados no sistema.</div>
+    <div class="field"><label>Descrição *</label>
+      <input class="input" id="av-desc" placeholder="Ex: Blusa rosa M" autocomplete="off"></div>
+    <div class="field"><label>Valor unitário (R$) *</label>
+      <input class="input" id="av-preco" type="number" inputmode="decimal" placeholder="0,00" min="0"></div>
+    <div class="field"><label>Quantidade</label>
+      <input class="input" id="av-qty" type="number" inputmode="numeric" value="1" min="1"></div>
+    <button class="btn btn-primary btn-block" style="padding:14px;margin-top:4px;" onclick="addAvulso()">
+      + Adicionar ao carrinho</button>
+    <div style="height:8px;"></div>`;
+  setTimeout(()=>document.getElementById('av-desc')?.focus(), 100);
+}
+
+function addAvulso() {
+  const desc  = document.getElementById('av-desc').value.trim();
+  const preco = parseFloat(document.getElementById('av-preco').value);
+  const qty   = Math.max(1, parseInt(document.getElementById('av-qty').value)||1);
+  if (!desc || isNaN(preco) || preco <= 0) { showToast('Preencha descrição e valor'); return; }
+  cart.push({ id:'av_'+uid(), codigo:'—', nome:desc, preco, quantidade:qty, avulso:true });
+  closeModal(); render();
+  showToast(`${desc} adicionado ✓`);
+}
 
 function finalize() {
   if (!pgto) return;
   if (pgto==='fiado' && !clienteId) { showToast('Selecione o cliente'); return; }
 
   const prods = DB.get(K.products);
+  // stock check only for registered products
   for (const it of cart) {
+    if (it.avulso) continue;
     const p = prods.find(x=>x.id===it.id);
     if (!p || p.estoque < it.quantidade) { showToast(`Estoque insuficiente: ${it.nome}`); return; }
   }
@@ -809,7 +849,12 @@ function finalize() {
   const saleDate  = new Date().toISOString();
   const saleItems = cart.map(i=>({...i}));
 
-  saleItems.forEach(it => { const p=prods.find(x=>x.id===it.id); p.estoque-=it.quantidade; });
+  // decrement stock for registered items only
+  saleItems.forEach(it => {
+    if (it.avulso) return;
+    const p = prods.find(x=>x.id===it.id);
+    if (p) p.estoque -= it.quantidade;
+  });
   DB.set(K.products, prods);
 
   let clienteNome = null;
@@ -831,7 +876,7 @@ function finalize() {
   DB.set(K.sales, sales);
 
   cart=[]; pgto=null; troco=''; clienteId=null;
-  closeCart(); render();
+  render();
   showToast(`✓ Venda de ${fmt(total)} registrada`);
 }
 
@@ -1103,7 +1148,7 @@ function saveCust(fromCart=false) {
   }
   DB.set(K.customers, custs);
   closeModal();
-  if (fromCart) { clienteId=newId; pgto='fiado'; rebuildCartBody(); }
+  if (fromCart) { clienteId=newId; pgto='fiado'; render(); }
   else { render(); }
   showToast(editCust?'Cliente atualizado':'Cliente adicionado ✓');
 }
