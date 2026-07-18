@@ -10,6 +10,7 @@
   <title>Maria's Confecções</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root {
       --primary: #C9A227;
@@ -1278,7 +1279,10 @@ function renderRelatorios() {
     <div class="card">
       <div class="sec-hd">
         <div class="sec-title">📋 Vendas de hoje</div>
-        ${hoje.length?`<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;" onclick="exportar()">Exportar</button>`:''}
+        ${hoje.length?`<div style="display:flex;gap:6px;">
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;" onclick="exportar()">📋 Texto</button>
+          <button class="btn btn-primary"  style="font-size:11px;padding:4px 10px;" onclick="gerarPDF()">📄 PDF</button>
+        </div>`:''}
       </div>
       ${!hoje.length
         ? `<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Nenhuma venda hoje</div>`
@@ -1297,6 +1301,132 @@ function renderRelatorios() {
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Apaga todas as vendas. Produtos e clientes são mantidos.</div>
       <button class="btn btn-danger btn-block" onclick="zerar()">🗑 Zerar vendas</button>
     </div>`:''}`;
+}
+
+async function gerarPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc  = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W    = doc.internal.pageSize.getWidth();
+  const sales = DB.get(K.sales);
+  const hoje  = sales.filter(s => new Date(s.data).toDateString() === todayStr());
+  const total = hoje.reduce((s,v) => s + v.total, 0);
+  const byPgto = m => hoje.filter(s => s.formaPgto === m).reduce((s,v) => s + v.total, 0);
+  const pqtd = {};
+  hoje.forEach(s => s.itens.forEach(i => { pqtd[i.nome] = (pqtd[i.nome]||0) + i.quantidade; }));
+  const top = Object.entries(pqtd).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const dateStr = new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+  const fmtPdf  = n => 'R$ ' + Number(n).toFixed(2).replace('.',',');
+
+  let y = 18;
+  const gap   = (n=4) => { y += n; };
+  const line  = (x1,x2) => { doc.setDrawColor(180); doc.line(x1, y, x2, y); gap(4); };
+  const txt   = (text, x, size=10, style='normal', color=[30,30,30]) => {
+    doc.setFontSize(size); doc.setFont('helvetica', style); doc.setTextColor(...color);
+    doc.text(String(text), x, y);
+  };
+  const right = (text, size=10, style='normal', color=[30,30,30]) => {
+    doc.setFontSize(size); doc.setFont('helvetica', style); doc.setTextColor(...color);
+    doc.text(String(text), W-14, y, { align:'right' });
+  };
+
+  // ── Cabeçalho ──
+  doc.setFillColor(0, 0, 0);
+  doc.rect(0, 0, W, 28, 'F');
+  doc.setFontSize(18); doc.setFont('helvetica','bold'); doc.setTextColor(201, 162, 39);
+  doc.text("Bazar Maria's Confecções", W/2, 12, { align:'center' });
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(160,140,100);
+  doc.text('Relatório de Vendas', W/2, 19, { align:'center' });
+  doc.setTextColor(120,120,120);
+  doc.text(dateStr, W/2, 25, { align:'center' });
+  y = 36;
+
+  // ── Total ──
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(14, y-5, W-28, 18, 3, 3, 'F');
+  txt('TOTAL DO DIA', 20, 8, 'bold', [120,120,120]);
+  right(`${hoje.length} venda(s)`, 8, 'normal', [120,120,120]);
+  gap(7);
+  txt(fmtPdf(total), 20, 22, 'bold', [0,0,0]);
+  gap(10);
+
+  // ── Por forma de pagamento ──
+  line(14, W-14);
+  txt('FORMAS DE PAGAMENTO', 14, 8, 'bold', [120,120,120]); gap(5);
+  const pgtos = [
+    ['💵 Dinheiro','dinheiro'], ['📱 Pix','pix'], ['💳 Cartão','cartao'], ['📋 Fiado','fiado']
+  ];
+  pgtos.forEach(([label, key]) => {
+    const v = byPgto(key);
+    if (v > 0) {
+      txt(label, 18, 10, 'normal', [50,50,50]);
+      right(fmtPdf(v), 10, 'bold', [0,0,0]);
+      gap(6);
+    }
+  });
+
+  // ── Mais vendidos ──
+  if (top.length) {
+    gap(2); line(14, W-14);
+    txt('PRODUTOS MAIS VENDIDOS', 14, 8, 'bold', [120,120,120]); gap(5);
+    top.forEach(([nome, qtd], i) => {
+      txt(`${i+1}. ${nome}`, 18, 10, 'normal', [50,50,50]);
+      right(`${qtd} un.`, 10, 'bold', [201,162,39]);
+      gap(6);
+    });
+  }
+
+  // ── Vendas detalhadas ──
+  gap(2); line(14, W-14);
+  txt('DETALHAMENTO DE VENDAS', 14, 8, 'bold', [120,120,120]); gap(5);
+  const pgtoLabel = { dinheiro:'Dinheiro', pix:'Pix', cartao:'Cartão', fiado:'Fiado' };
+
+  hoje.slice().reverse().forEach((s, idx) => {
+    // Nova página se necessário
+    if (y > 265) { doc.addPage(); y = 16; }
+
+    // Linha da venda
+    doc.setFillColor(idx%2===0?250:255, idx%2===0?250:255, idx%2===0?250:255);
+    const blockH = 8 + s.itens.length * 5.5;
+    doc.rect(14, y-4, W-28, blockH, 'F');
+
+    txt(`${hhmm(s.data)}  ·  ${pgtoLabel[s.formaPgto]}${s.clienteNome?' · '+s.clienteNome:''}`, 18, 9, 'normal', [80,80,80]);
+    right(fmtPdf(s.total), 11, 'bold', [0,0,0]);
+    gap(5.5);
+
+    s.itens.forEach(it => {
+      txt(`  ${it.quantidade}× ${it.nome}`, 20, 8.5, 'normal', [120,120,120]);
+      right(fmtPdf(it.preco * it.quantidade), 8.5, 'normal', [150,150,150]);
+      gap(5.5);
+    });
+    gap(1);
+  });
+
+  // ── Rodapé ──
+  const pages = doc.getNumberOfPages();
+  for (let p=1; p<=pages; p++) {
+    doc.setPage(p);
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(160,160,160);
+    doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')} · Bazar Maria's Confecções`, W/2, 292, { align:'center' });
+    if (pages > 1) doc.text(`Página ${p} de ${pages}`, W-14, 292, { align:'right' });
+  }
+
+  // ── Compartilhar ou baixar ──
+  const filename = `relatorio-marias-${new Date().toISOString().slice(0,10)}.pdf`;
+  const blob = doc.output('blob');
+
+  if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type:'application/pdf' })] })) {
+    await navigator.share({
+      title: "Relatório Bazar Maria's",
+      files: [new File([blob], filename, { type:'application/pdf' })]
+    });
+  } else {
+    // Fallback: download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    showToast('PDF baixado ✓');
+  }
 }
 
 function exportar() {
