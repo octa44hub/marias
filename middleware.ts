@@ -1,42 +1,18 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
+// Middleware simples: verifica apenas se o cookie de sessão do Supabase existe.
+// Sem chamadas de rede — compatível com Edge Runtime da Vercel.
+// A validação real do token acontece nas API routes (Node.js).
+export function middleware(req: NextRequest) {
+  const isAuthenticated = req.cookies.getAll().some(
+    (c) => c.name.includes("-auth-token")
   );
 
-  // Refresca o token e verifica a sessão
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user && !request.nextUrl.pathname.startsWith("/login")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  if (!isAuthenticated && !req.nextUrl.pathname.startsWith("/login")) {
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {
