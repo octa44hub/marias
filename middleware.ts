@@ -1,15 +1,14 @@
-export { default } from "next-auth/middleware";
+import { withAuth } from "next-auth/middleware";
+
+export default withAuth({
+  secret: process.env.NEXTAUTH_SECRET,
+  pages: {
+    signIn: "/login",
+  },
+});
 
 export const config = {
   matcher: [
-    /*
-     * Protege todas as rotas EXCETO:
-     * - /login (página de autenticação)
-     * - /api/auth (rotas do NextAuth)
-     * - /_next (arquivos estáticos do Next.js)
-     * - /icons, /manifest.json, /sw.js (arquivos do PWA)
-     * - /favicon.ico
-     */
     "/((?!login|api/auth|_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|icons).*)",
   ],
 };
