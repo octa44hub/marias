@@ -240,6 +240,19 @@
       display: flex; align-items: center; justify-content: center;
     }
     .icon-btn:active { background: #f0e8ec; }
+    .prod-inativo { opacity: .45; }
+    .filter-chips {
+      display: flex; gap: 6px; overflow-x: auto;
+      padding-bottom: 10px; margin-bottom: 4px; scrollbar-width: none;
+    }
+    .filter-chips::-webkit-scrollbar { display: none; }
+    .fchip {
+      white-space: nowrap; padding: 6px 14px; border-radius: 20px;
+      border: 1.5px solid var(--border); background: white;
+      color: var(--text-muted); font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: inherit; flex-shrink: 0; transition: all .15s;
+    }
+    .fchip.on { border-color: var(--primary); background: var(--primary); color: white; }
 
     /* ── MODAL ── */
     .modal-overlay {
@@ -470,6 +483,7 @@ let editProd     = null;
 let editCust     = null;
 let viewCust     = null;
 let billingView  = 'today'; // 'today' | 'month'
+let prodFilter   = 'todos'; // 'todos'|'em_estoque'|'estoque_baixo'|'esgotados'|'inativos'
 
 // ══════════════════════════════════════════
 //  NAVIGATION
@@ -548,8 +562,9 @@ function renderHome() {
   const todayTotal = todaySales.reduce((s,v)=>s+v.total, 0);
   const monthTotal = monthSales.reduce((s,v)=>s+v.total, 0);
 
-  const comEstoque  = prods.filter(p=>p.estoque>0).length;
-  const totalUnids  = prods.reduce((s,p)=>s+p.estoque, 0);
+  const ativos      = prods.filter(p=>p.ativo!==false);
+  const comEstoque  = ativos.filter(p=>p.estoque>0).length;
+  const totalUnids  = ativos.reduce((s,p)=>s+p.estoque, 0);
 
   const isTod = billingView === 'today';
   const tabStyle = (active) =>
@@ -626,8 +641,10 @@ function renderPDV() {
     <div class="e-sub">Vá em Produtos para adicionar</div></div>`;
 
   const list = prods.filter(p =>
-    p.nome.toLowerCase().includes(qSearch.toLowerCase()) ||
-    p.codigo.toLowerCase().includes(qSearch.toLowerCase())
+    p.ativo !== false && (
+      p.nome.toLowerCase().includes(qSearch.toLowerCase()) ||
+      p.codigo.toLowerCase().includes(qSearch.toLowerCase())
+    )
   );
 
   const cards = list.map(p => {
@@ -823,36 +840,74 @@ function finalize() {
 // ══════════════════════════════════════════
 function renderProdutos() {
   const prods = DB.get(K.products);
-  if (!prods.length) return `<div class="empty"><div class="e-ico">📦</div>
-    <div class="e-text">Nenhum produto cadastrado</div>
-    <div class="e-sub">Toque em + Produto para adicionar</div></div>`;
+  const sales = DB.get(K.sales);
 
-  const list = prods.filter(p =>
-    p.nome.toLowerCase().includes(qSearch.toLowerCase()) ||
-    p.codigo.toLowerCase().includes(qSearch.toLowerCase())
-  );
+  const filtered = prods.filter(p => {
+    const matchSearch = !qSearch ||
+      p.nome.toLowerCase().includes(qSearch.toLowerCase()) ||
+      p.codigo.toLowerCase().includes(qSearch.toLowerCase());
+    if (!matchSearch) return false;
+    const isAtivo = p.ativo !== false;
+    switch (prodFilter) {
+      case 'em_estoque':    return isAtivo && p.estoque > 0;
+      case 'estoque_baixo': return isAtivo && p.estoque > 0 && p.estoque <= 2;
+      case 'esgotados':     return isAtivo && p.estoque === 0;
+      case 'inativos':      return !isAtivo;
+      default:              return true;
+    }
+  });
 
-  const rows = list.map(p => {
-    const cls = p.estoque===0?'zero':p.estoque<=2?'low':'';
-    return `<div class="prod-row">
-      <div class="pr-info">
-        <div class="pr-cod">${esc(p.codigo)}</div>
-        <div class="pr-nome">${esc(p.nome)}</div>
-        <div class="pr-preco">${fmt(p.preco)}</div>
-      </div>
-      <div class="pr-est">
-        <div class="est-num ${cls}">${p.estoque}</div>
-        <div class="est-lbl">estoque</div>
-      </div>
-      <button class="icon-btn" onclick="openProdModal('${p.id}')">✏️</button>
-      <button class="icon-btn" onclick="delProd('${p.id}')">🗑️</button>
-    </div>`;
+  const FILTERS = [
+    { key:'todos',         label:'Todos' },
+    { key:'em_estoque',    label:'Em estoque' },
+    { key:'estoque_baixo', label:'⚠️ Baixo' },
+    { key:'esgotados',     label:'Esgotados' },
+    { key:'inativos',      label:'Inativos' },
+  ];
+
+  const chips = FILTERS.map(f =>
+    `<button class="fchip${prodFilter===f.key?' on':''}" onclick="prodFilter='${f.key}';render()">${f.label}</button>`
+  ).join('');
+
+  const rows = filtered.map(p => {
+    const isAtivo  = p.ativo !== false;
+    const cls      = p.estoque===0?'zero':p.estoque<=2?'low':'';
+    const inSales  = sales.some(s=>s.itens.some(i=>i.id===p.id));
+    return `
+      <div class="prod-row${isAtivo?'':' prod-inativo'}">
+        <div class="pr-info">
+          <div class="pr-cod">${esc(p.codigo)}</div>
+          <div class="pr-nome">${esc(p.nome)}${!isAtivo?` <span style="font-size:10px;color:var(--text-muted);">(inativo)</span>`:''}</div>
+          <div class="pr-preco">${fmt(p.preco)}</div>
+        </div>
+        <div class="pr-est">
+          <div class="est-num ${cls}">${p.estoque}</div>
+          <div class="est-lbl">estoque</div>
+        </div>
+        <button class="icon-btn" onclick="openProdModal('${p.id}')" title="Editar">✏️</button>
+        ${isAtivo
+          ? `<button class="icon-btn" onclick="inativarProd('${p.id}')" title="Inativar">🚫</button>`
+          : `<button class="icon-btn" onclick="reativarProd('${p.id}')" title="Reativar">✅</button>`}
+        ${!inSales
+          ? `<button class="icon-btn" onclick="delProd('${p.id}')" title="Excluir">🗑️</button>`
+          : ''}
+      </div>`;
   }).join('');
 
   return `
-    <input class="search" type="search" placeholder="🔍 Buscar produto..."
+    <input class="search" type="search" placeholder="🔍 Buscar por código ou nome..."
       value="${esc(qSearch)}" oninput="qSearch=this.value;render()">
-    <div class="card">${rows || `<div class="empty"><div class="e-ico">🔍</div><div class="e-text">Nenhum resultado</div></div>`}</div>`;
+    <div class="filter-chips">${chips}</div>
+    ${!prods.length
+      ? `<div class="empty"><div class="e-ico">📦</div>
+         <div class="e-text">Nenhum produto cadastrado</div>
+         <div class="e-sub">Toque em + Produto para adicionar</div></div>`
+      : `<div class="card">${rows ||
+          `<div class="empty" style="padding:24px 0;">
+             <div class="e-ico">🔍</div>
+             <div class="e-text">Nenhum produto nessa categoria</div>
+           </div>`
+        }</div>`}`;
 }
 
 function openProdModal(pid) {
@@ -890,18 +945,36 @@ function saveProd() {
     prods[i] = {...prods[i], codigo, nome, preco, estoque};
   } else {
     if (prods.find(p=>p.codigo===codigo)) { showToast('Código já existe'); return; }
-    prods.push({id:uid(), codigo, nome, preco, estoque});
+    prods.push({id:uid(), codigo, nome, preco, estoque, ativo: true});
   }
   DB.set(K.products, prods);
   closeModal(); render();
   showToast(editProd?'Produto atualizado':'Produto adicionado ✓');
 }
 
+function inativarProd(pid) {
+  if (!confirm('Inativar produto? Ele não aparecerá mais no PDV, mas o histórico é mantido.')) return;
+  const prods = DB.get(K.products);
+  const p = prods.find(x=>x.id===pid);
+  if (p) { p.ativo = false; DB.set(K.products, prods); }
+  cart = cart.filter(c=>c.id!==pid);
+  render(); showToast('Produto inativado');
+}
+
+function reativarProd(pid) {
+  const prods = DB.get(K.products);
+  const p = prods.find(x=>x.id===pid);
+  if (p) { p.ativo = true; DB.set(K.products, prods); }
+  render(); showToast('Produto reativado ✓');
+}
+
 function delProd(pid) {
-  if (!confirm('Remover produto?')) return;
+  const inSales = DB.get(K.sales).some(s=>s.itens.some(i=>i.id===pid));
+  if (inSales) { showToast('Produto usado em vendas — use inativar'); return; }
+  if (!confirm('Excluir permanentemente?\nEste produto nunca foi vendido.')) return;
   DB.set(K.products, DB.get(K.products).filter(p=>p.id!==pid));
   cart = cart.filter(c=>c.id!==pid);
-  render(); showToast('Produto removido');
+  render(); showToast('Produto excluído');
 }
 
 // ══════════════════════════════════════════
